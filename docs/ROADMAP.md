@@ -29,13 +29,13 @@
 - [x] TLS certificate status display (auto-managed, file-loaded, PEM, folders)
 - [x] TLS automation policy management (CRUD with ACME/ZeroSSL/Internal issuers)
 
-## Phase 3b: Middleware & Matchers
-- [ ] Headers middleware configuration (request/response header add/set/delete)
-- [ ] Compression (encode) configuration (gzip/zstd, min_length)
-- [ ] Advanced matchers (header, query, remote_ip)
-- [ ] BasicAuth configuration (users, password hash generation)
-- [ ] URI Rewrite handler
-- [ ] CORS quick-configuration (built on headers middleware)
+## Phase 3b: Middleware & Matchers ✅
+- [x] Headers middleware configuration (request/response header add/set/delete)
+- [x] Compression (encode) configuration (gzip/zstd, min_length)
+- [x] Advanced matchers (header, query, remote_ip)
+- [x] BasicAuth configuration (users, password hash generation)
+- [x] URI Rewrite handler
+- [x] CORS quick-configuration (built on headers middleware)
 
 ## Phase 3c: Operations & Monitoring
 - [ ] Upstream health monitoring page (real-time polling with status cards)
