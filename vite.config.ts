@@ -18,9 +18,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ui\/api/, ""),
         configure: (proxy) => {
-          // Remove Sec-Fetch-Mode so Caddy's admin API treats the request
+          // Remove headers so Caddy's admin API treats the request
           // as a non-browser client, bypassing origin enforcement
           proxy.on("proxyReq", (proxyReq) => {
+            proxyReq.removeHeader("origin");
             proxyReq.removeHeader("sec-fetch-mode");
           });
         },
