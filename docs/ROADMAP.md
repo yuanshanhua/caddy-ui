@@ -37,11 +37,11 @@
 - [x] URI Rewrite handler
 - [x] CORS quick-configuration (built on headers middleware)
 
-## Phase 3c: Operations & Monitoring
-- [ ] Upstream health monitoring page (real-time polling with status cards)
-- [ ] Logging configuration (log output, format, level per server)
-- [ ] Config templates/presets (common patterns: WordPress, SPA, API gateway)
-- [ ] Undo/revert last change (via config diff + reload)
+## Phase 3c: Operations & Monitoring ✅
+- [x] Upstream health monitoring page (real-time polling with status cards)
+- [x] Logging configuration (log output, format, level per server)
+- [x] Config templates/presets (common patterns: WordPress, SPA, API gateway)
+- [ ] ~~Undo/revert last change~~ (deferred — requires IndexedDB snapshots, planned for Phase 4)
 
 ## Phase 4: UX & Editor
 - [ ] Monaco editor integration (JSON + Caddyfile syntax highlighting)

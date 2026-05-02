@@ -5,9 +5,11 @@
 import {
   ArrowUpDown,
   FileCode,
+  FileText,
   FileUp,
   Globe,
   LayoutDashboard,
+  LayoutTemplate,
   Settings,
   Shield,
 } from "lucide-react";
@@ -21,6 +23,8 @@ const navItems = [
   { to: "/import", icon: FileUp, label: "Import" },
   { to: "/upstreams", icon: ArrowUpDown, label: "Upstreams" },
   { to: "/tls", icon: Shield, label: "TLS / Certs" },
+  { to: "/logging", icon: FileText, label: "Logging" },
+  { to: "/templates", icon: LayoutTemplate, label: "Templates" },
   { to: "/global", icon: Settings, label: "Global Config" },
   { to: "/config", icon: FileCode, label: "Raw Config" },
 ] as const;

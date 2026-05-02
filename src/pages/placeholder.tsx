@@ -25,15 +25,6 @@ function PlaceholderPage({ title, description }: { title: string; description: s
   );
 }
 
-export function UpstreamsPage() {
-  return (
-    <PlaceholderPage
-      title="Upstreams"
-      description="Monitor reverse proxy upstream health and traffic."
-    />
-  );
-}
-
 export function GlobalConfigPage() {
   return (
     <PlaceholderPage
