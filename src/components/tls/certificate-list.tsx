@@ -54,10 +54,7 @@ export function CertificateList({ certificates }: CertificateListProps) {
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {automatedDomains.map((domain) => (
-                <div
-                  key={domain}
-                  className="flex items-center gap-2 rounded-lg border px-3 py-2"
-                >
+                <div key={domain} className="flex items-center gap-2 rounded-lg border px-3 py-2">
                   <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-sm font-mono">{domain}</span>
                   <Badge variant="success" className="text-xs">

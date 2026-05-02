@@ -5,11 +5,11 @@
  * Caddy's /adapt endpoint, preview the result, and apply it as the running config.
  */
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useAdaptCaddyfile, useConfigLoad } from "@/hooks/use-config";
 import { AlertTriangle, FileUp, Play, RotateCcw, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
@@ -139,11 +139,7 @@ export function ImportPage() {
                 className="hidden"
                 onChange={handleFileUpload}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
+              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-4 w-4" />
                 Upload File
               </Button>
@@ -153,7 +149,9 @@ export function ImportPage() {
         <CardContent>
           <Textarea
             className="min-h-[300px] font-mono text-sm resize-y"
-            placeholder={`# Example Caddyfile\nexample.com {\n    reverse_proxy localhost:3000\n}\n\napi.example.com {\n    reverse_proxy localhost:8080\n}`}
+            placeholder={
+              "# Example Caddyfile\nexample.com {\n    reverse_proxy localhost:3000\n}\n\napi.example.com {\n    reverse_proxy localhost:8080\n}"
+            }
             value={caddyfile}
             onChange={(e) => {
               setCaddyfile(e.target.value);
@@ -163,12 +161,10 @@ export function ImportPage() {
           />
           <div className="flex items-center justify-between mt-4">
             <p className="text-xs text-muted-foreground">
-              Uses Caddy's <code className="text-xs bg-muted px-1 py-0.5 rounded">/adapt</code> endpoint for conversion.
+              Uses Caddy's <code className="text-xs bg-muted px-1 py-0.5 rounded">/adapt</code>{" "}
+              endpoint for conversion.
             </p>
-            <Button
-              onClick={handleConvert}
-              disabled={!hasContent || adaptMutation.isPending}
-            >
+            <Button onClick={handleConvert} disabled={!hasContent || adaptMutation.isPending}>
               <Play className="h-4 w-4" />
               {adaptMutation.isPending ? "Converting..." : "Convert & Preview"}
             </Button>

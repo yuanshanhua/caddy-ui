@@ -25,9 +25,7 @@ export function useAddTlsPolicy() {
     mutationFn: async (policy: AutomationPolicy) => {
       // Try appending to existing policies array first
       try {
-        const existing = await configApi.get<AutomationPolicy[]>(
-          "apps/tls/automation/policies",
-        );
+        const existing = await configApi.get<AutomationPolicy[]>("apps/tls/automation/policies");
         await configApi.put(`apps/tls/automation/policies/${existing.length}`, policy);
       } catch (err) {
         if (!(err instanceof CaddyApiError) || err.status !== 404) throw err;

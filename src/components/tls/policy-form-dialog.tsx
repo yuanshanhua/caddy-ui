@@ -175,7 +175,10 @@ export function PolicyFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onClose={() => onOpenChange(false)} className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        onClose={() => onOpenChange(false)}
+        className="max-w-2xl max-h-[85vh] overflow-y-auto"
+      >
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit" : "Add"} Automation Policy</DialogTitle>
           <DialogDescription>
@@ -194,7 +197,8 @@ export function PolicyFormDialog({
               onChange={(e) => setSubjects(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Comma-separated list of domains this policy applies to. Leave empty for a catch-all policy.
+              Comma-separated list of domains this policy applies to. Leave empty for a catch-all
+              policy.
             </p>
           </div>
 
@@ -303,8 +307,8 @@ export function PolicyFormDialog({
                 {/* Internal CA note */}
                 {issuer.module === "internal" && (
                   <p className="text-xs text-muted-foreground">
-                    Uses Caddy's built-in CA to issue certificates. Useful for local development
-                    or internal services.
+                    Uses Caddy's built-in CA to issue certificates. Useful for local development or
+                    internal services.
                   </p>
                 )}
               </div>

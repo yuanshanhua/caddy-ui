@@ -4,7 +4,15 @@
 
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui";
-import { ArrowUpDown, FileCode, FileUp, Globe, LayoutDashboard, Settings, Shield } from "lucide-react";
+import {
+  ArrowUpDown,
+  FileCode,
+  FileUp,
+  Globe,
+  LayoutDashboard,
+  Settings,
+  Shield,
+} from "lucide-react";
 import { NavLink } from "react-router";
 
 const navItems = [

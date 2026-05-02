@@ -2,10 +2,10 @@
  * Policy list component — displays TLS automation policies with edit/delete actions.
  */
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useDeleteTlsPolicy } from "@/hooks/use-tls";
 import type { AutomationPolicy } from "@/types/tls-app";
 import { Globe, Pencil, Plus, Shield, Trash2 } from "lucide-react";
@@ -30,18 +30,25 @@ export function PolicyList({ policies, onAdd, onEdit }: PolicyListProps) {
 
   function issuerModuleLabel(module: string): string {
     switch (module) {
-      case "acme": return "ACME";
-      case "zerossl": return "ZeroSSL";
-      case "internal": return "Internal CA";
-      default: return module;
+      case "acme":
+        return "ACME";
+      case "zerossl":
+        return "ZeroSSL";
+      case "internal":
+        return "Internal CA";
+      default:
+        return module;
     }
   }
 
   function issuerBadgeVariant(module: string): "default" | "secondary" | "success" {
     switch (module) {
-      case "acme": return "default";
-      case "zerossl": return "success";
-      default: return "secondary";
+      case "acme":
+        return "default";
+      case "zerossl":
+        return "success";
+      default:
+        return "secondary";
     }
   }
 
@@ -128,9 +135,7 @@ export function PolicyList({ policies, onAdd, onEdit }: PolicyListProps) {
 
               {policy.on_demand && <Badge variant="warning">On-Demand</Badge>}
               {policy.must_staple && <Badge variant="secondary">Must-Staple</Badge>}
-              {policy.key_type && (
-                <Badge variant="secondary">{policy.key_type}</Badge>
-              )}
+              {policy.key_type && <Badge variant="secondary">{policy.key_type}</Badge>}
             </div>
 
             {policy.issuers?.some((i) => i.email) && (
@@ -144,7 +149,9 @@ export function PolicyList({ policies, onAdd, onEdit }: PolicyListProps) {
 
       <ConfirmDialog
         open={deleteIndex !== null}
-        onOpenChange={(open) => { if (!open) setDeleteIndex(null); }}
+        onOpenChange={(open) => {
+          if (!open) setDeleteIndex(null);
+        }}
         title="Delete Automation Policy?"
         description={`This will delete policy #${(deleteIndex ?? 0) + 1}. Domains covered by this policy will fall back to Caddy's default certificate management.`}
         confirmLabel="Delete Policy"
