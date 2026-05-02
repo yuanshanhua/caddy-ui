@@ -39,13 +39,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   return <>{children}</>;
 }
 
-export function DialogOverlay({
-  onClick,
-  className,
-}: {
-  onClick: () => void;
-  className?: string;
-}) {
+export function DialogOverlay({ onClick, className }: { onClick: () => void; className?: string }) {
   return (
     <div
       className={cn("fixed inset-0 z-50 bg-black/80 animate-in fade-in-0", className)}
