@@ -31,17 +31,19 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen border-r bg-card transition-all duration-200",
+        "fixed left-0 top-0 z-40 h-screen border-r bg-sidebar transition-all duration-300 ease-out",
         sidebarCollapsed ? "w-16" : "sidebar-width",
       )}
     >
       {/* Logo / Brand */}
       <div className="flex h-14 items-center border-b px-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
             <span className="text-sm font-bold text-primary-foreground">C</span>
           </div>
-          {!sidebarCollapsed && <span className="text-lg font-semibold">Caddy UI</span>}
+          {!sidebarCollapsed && (
+            <span className="text-lg font-semibold tracking-tight">Caddy UI</span>
+          )}
         </div>
       </div>
 
@@ -54,10 +56,12 @@ export function Sidebar() {
             end={item.to === "/"}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                "hover:bg-accent hover:text-accent-foreground",
-                isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground",
-                sidebarCollapsed && "justify-center px-2",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                "hover:bg-primary/5 hover:text-foreground",
+                isActive
+                  ? "bg-primary/10 text-primary border-l-2 border-primary font-semibold"
+                  : "text-muted-foreground border-l-2 border-transparent",
+                sidebarCollapsed && "justify-center px-2 border-l-0",
               )
             }
           >

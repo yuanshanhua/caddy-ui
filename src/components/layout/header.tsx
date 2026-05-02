@@ -11,7 +11,7 @@ export function Header() {
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur-lg">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle sidebar">
           {sidebarCollapsed ? (

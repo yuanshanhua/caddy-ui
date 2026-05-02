@@ -42,7 +42,10 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 export function DialogOverlay({ onClick, className }: { onClick: () => void; className?: string }) {
   return (
     <div
-      className={cn("fixed inset-0 z-50 bg-black/80 animate-in fade-in-0", className)}
+      className={cn(
+        "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in-0",
+        className,
+      )}
       onClick={onClick}
       onKeyDown={() => {}}
       role="presentation"
@@ -77,7 +80,7 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(
           <div
             ref={ref}
             className={cn(
-              "relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-lg border bg-background p-6 shadow-lg animate-in fade-in-0 zoom-in-95",
+              "relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl border bg-background p-6 shadow-xl animate-in fade-in-0 zoom-in-95",
               className,
             )}
             {...props}
