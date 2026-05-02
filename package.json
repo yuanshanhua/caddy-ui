@@ -1,0 +1,39 @@
+{
+  "name": "caddy-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A pure static SPA for managing Caddy web server via its Admin API",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
+    "format": "biome format --write src/"
+  },
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router": "^7.6.1",
+    "@tanstack/react-query": "^5.80.6",
+    "zustand": "^5.0.5",
+    "zod": "^3.25.36",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.0",
+    "lucide-react": "^0.511.0",
+    "class-variance-authority": "^0.7.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10",
+    "@biomejs/biome": "^1.9.4",
+    "tailwindcss": "^4.1.10",
+    "@tailwindcss/vite": "^4.1.10",
+    "@types/node": "^24.12.2"
+  }
+}

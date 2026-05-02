@@ -1,0 +1,25 @@
+# Development Caddyfile for testing caddy-ui
+#
+# Usage:
+#   caddy run --config Caddyfile.dev
+#
+# This gives you a Caddy instance with:
+# - Admin API on localhost:2019 (default)
+# - A sample HTTP server on :8080 to test config visibility
+
+{
+	admin localhost:2019
+}
+
+:8080 {
+	respond "Hello from Caddy dev server"
+}
+
+:8081 {
+	reverse_proxy localhost:3000
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy localhost:3001
+	}
+}
