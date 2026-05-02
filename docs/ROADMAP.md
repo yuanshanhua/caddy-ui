@@ -1,6 +1,6 @@
 # Caddy UI Roadmap
 
-## Phase 1: Foundation ✅ (Current)
+## Phase 1: Foundation ✅
 - [x] Project scaffolding (Vite + React + TypeScript + Tailwind)
 - [x] API client with typed errors
 - [x] Caddy config TypeScript type definitions
@@ -10,16 +10,17 @@
 - [x] Sites list page (read-only)
 - [x] Raw config editor (textarea, JSON validate, apply)
 
-## Phase 2: Core CRUD
-- [ ] Add new HTTP server (form + validation)
-- [ ] Edit server listen addresses
-- [ ] Add/edit/delete routes within a server
-- [ ] Route matcher editor (host, path, method, headers)
-- [ ] Reverse proxy handler form (upstreams, load balancing)
-- [ ] File server handler form
-- [ ] Static response / redirect handler
-- [ ] Config diff preview before applying changes
-- [ ] Undo/revert last change
+## Phase 2: Core CRUD ✅
+- [x] Add new HTTP server (form + validation)
+- [x] Edit server listen addresses
+- [x] Add/edit/delete routes within a server
+- [x] Route matcher editor (host, path, method)
+- [x] Reverse proxy handler form (upstreams, load balancing, health checks)
+- [x] File server handler form
+- [x] Static response / redirect handler
+- [x] Config diff preview component
+- [x] Delete operations with confirmation dialogs
+- [x] CI/CD pipeline (GitHub Actions: lint + typecheck + build)
 
 ## Phase 3: Advanced Features
 - [ ] TLS certificate status display
@@ -31,6 +32,7 @@
 - [ ] Compression (encode) configuration
 - [ ] Authentication/basicauth configuration
 - [ ] Logging configuration
+- [ ] Undo/revert last change
 
 ## Phase 4: UX Polish
 - [ ] Dark mode support
