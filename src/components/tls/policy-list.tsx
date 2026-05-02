@@ -2,14 +2,14 @@
  * Policy list component — displays TLS automation policies with edit/delete actions.
  */
 
+import { Globe, Pencil, Plus, Shield, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDeleteTlsPolicy } from "@/hooks/use-tls";
 import type { AutomationPolicy } from "@/types/tls-app";
-import { Globe, Pencil, Plus, Shield, Trash2 } from "lucide-react";
-import { useState } from "react";
 
 interface PolicyListProps {
   policies: AutomationPolicy[];

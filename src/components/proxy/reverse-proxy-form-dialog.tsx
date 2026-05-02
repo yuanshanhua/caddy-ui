@@ -3,6 +3,8 @@
  * Used as a standalone page/section when editing proxy settings in detail.
  */
 
+import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,8 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import type { ReverseProxyHandler } from "@/types/reverse-proxy";
-import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface ReverseProxyFormProps {
   open: boolean;
@@ -119,7 +119,7 @@ export function ReverseProxyFormDialog({
         .filter((u) => u.dial.trim())
         .map((u) => ({
           dial: u.dial.trim(),
-          ...(u.maxRequests ? { max_requests: Number.parseInt(u.maxRequests) } : {}),
+          ...(u.maxRequests ? { max_requests: Number.parseInt(u.maxRequests, 10) } : {}),
         })),
     };
 
@@ -128,7 +128,7 @@ export function ReverseProxyFormDialog({
       handler.load_balancing = {
         selection_policy: { policy: lbPolicy },
         ...(tryDuration ? { try_duration: tryDuration } : {}),
-        ...(retries ? { retries: Number.parseInt(retries) } : {}),
+        ...(retries ? { retries: Number.parseInt(retries, 10) } : {}),
       };
     }
 
@@ -144,7 +144,7 @@ export function ReverseProxyFormDialog({
       }
       if (passiveEnabled) {
         handler.health_checks.passive = {
-          max_fails: Number.parseInt(maxFails),
+          max_fails: Number.parseInt(maxFails, 10),
           fail_duration: failDuration,
         };
       }

@@ -4,14 +4,14 @@
  * Displays certificate status and manages TLS automation policies.
  */
 
+import { ShieldCheck } from "lucide-react";
+import { useState } from "react";
 import { CertificateList } from "@/components/tls/certificate-list";
 import { PolicyFormDialog } from "@/components/tls/policy-form-dialog";
 import { PolicyList } from "@/components/tls/policy-list";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAddTlsPolicy, useTlsApp, useUpdateTlsPolicy } from "@/hooks/use-tls";
 import type { AutomationPolicy } from "@/types/tls-app";
-import { ShieldCheck } from "lucide-react";
-import { useState } from "react";
 
 export function TlsPage() {
   const { data: tlsApp, isLoading, isError, error } = useTlsApp();

@@ -2,12 +2,12 @@
  * Raw Config page — full JSON editor for the Caddy configuration.
  */
 
+import { Copy, RotateCcw, Save } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfig, useConfigLoad } from "@/hooks/use-config";
-import { Copy, RotateCcw, Save } from "lucide-react";
-import { useState } from "react";
 
 export function RawConfigPage() {
   const { data: config, isLoading, isError, error } = useConfig();

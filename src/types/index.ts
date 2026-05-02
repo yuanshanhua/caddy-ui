@@ -2,45 +2,45 @@
  * Type barrel export — re-exports all Caddy config types.
  */
 
+export type { AdminConfig, RemoteAdmin } from "./admin";
 export type {
-  CaddyConfig,
   CaddyApps,
-  LoggingConfig,
+  CaddyConfig,
   LogConfig,
-  LogWriter,
   LogEncoder,
-  StorageConfig,
+  LoggingConfig,
+  LogWriter,
   PkiApp,
   PkiCaConfig,
+  StorageConfig,
 } from "./caddy";
-export type { AdminConfig, RemoteAdmin } from "./admin";
-export type { HttpApp, HttpServer, HttpRoute, AutomaticHttps, ServerLogConfig } from "./http-app";
 export type {
-  TlsApp,
-  TlsAutomation,
-  AutomationPolicy,
-  TlsIssuer,
-  TlsCertificates,
-} from "./tls-app";
-export type {
-  HttpHandler,
-  FileServerHandler,
-  StaticResponseHandler,
-  RedirHandler,
-  HeadersHandler,
-  EncodeHandler,
-  RewriteHandler,
-  TemplatesHandler,
   AuthenticationHandler,
+  EncodeHandler,
+  FileServerHandler,
+  HeadersHandler,
+  HttpHandler,
+  RedirHandler,
+  RewriteHandler,
+  StaticResponseHandler,
+  TemplatesHandler,
   UnknownHandler,
 } from "./handlers";
+export type { AutomaticHttps, HttpApp, HttpRoute, HttpServer, ServerLogConfig } from "./http-app";
+export type { PathRegexp, RemoteIpMatcher, RequestMatcher } from "./matchers";
 export type {
-  ReverseProxyHandler,
-  Upstream,
-  LoadBalancing,
-  HealthChecks,
   ActiveHealthCheck,
+  HealthChecks,
+  LoadBalancing,
   PassiveHealthCheck,
+  ReverseProxyHandler,
   Transport,
+  Upstream,
 } from "./reverse-proxy";
-export type { RequestMatcher, PathRegexp, RemoteIpMatcher } from "./matchers";
+export type {
+  AutomationPolicy,
+  TlsApp,
+  TlsAutomation,
+  TlsCertificates,
+  TlsIssuer,
+} from "./tls-app";

@@ -3,10 +3,10 @@
  * Periodically checks if the Caddy Admin API is reachable.
  */
 
-import { checkConnection } from "@/api/client";
-import { useConnectionStore } from "@/stores/connection";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { checkConnection } from "@/api/client";
+import { useConnectionStore } from "@/stores/connection";
 
 export function useConnection() {
   const { status, setStatus, setLastChecked } = useConnectionStore();

@@ -20,7 +20,8 @@
         "noArrayIndexKey": "off"
       },
       "a11y": {
-        "noLabelWithoutControl": "off"
+        "noLabelWithoutControl": "off",
+        "noStaticElementInteractions": "off"
       },
       "complexity": {
         "noForEach": "off",

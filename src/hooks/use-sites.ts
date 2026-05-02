@@ -3,11 +3,11 @@
  * Abstracts the config path manipulation for HTTP servers.
  */
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { configApi } from "@/api/config";
 import { configKeys, useConfig } from "@/hooks/use-config";
 import type { HttpServer } from "@/types/http-app";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
 
 /** Get all servers as an array of [id, server] tuples. */
 export function useSites() {

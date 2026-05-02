@@ -2,9 +2,9 @@
  * Dialog component for modals.
  */
 
-import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import { type HTMLAttributes, type MouseEvent, forwardRef, useCallback, useEffect } from "react";
+import { forwardRef, type HTMLAttributes, type MouseEvent, useCallback, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface DialogProps {
   open: boolean;

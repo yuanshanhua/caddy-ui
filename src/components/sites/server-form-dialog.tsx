@@ -2,6 +2,8 @@
  * Dialog for creating/editing an HTTP server.
  */
 
+import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +16,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { HttpServer } from "@/types/http-app";
-import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface ServerFormDialogProps {
   open: boolean;

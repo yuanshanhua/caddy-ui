@@ -2,9 +2,9 @@
  * TanStack Query hook for Caddy config operations.
  */
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { configApi } from "@/api/config";
 import type { CaddyConfig } from "@/types/caddy";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 /** Query key factory for config-related queries. */
 export const configKeys = {

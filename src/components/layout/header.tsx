@@ -2,9 +2,9 @@
  * Header component with connection indicator and sidebar toggle.
  */
 
+import { PanelLeft, PanelLeftClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUiStore } from "@/stores/ui";
-import { PanelLeft, PanelLeftClose } from "lucide-react";
 import { ConnectionIndicator } from "./connection-indicator";
 
 export function Header() {

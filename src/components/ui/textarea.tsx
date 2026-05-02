@@ -2,8 +2,8 @@
  * Textarea component following shadcn/ui patterns.
  */
 
+import { forwardRef, type TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
-import { type TextareaHTMLAttributes, forwardRef } from "react";
 
 export const Textarea = forwardRef<
   HTMLTextAreaElement,

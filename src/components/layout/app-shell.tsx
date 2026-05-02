@@ -2,9 +2,9 @@
  * App Shell — the main layout wrapper with sidebar, header, and content area.
  */
 
+import { Outlet } from "react-router";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui";
-import { Outlet } from "react-router";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 

@@ -2,6 +2,7 @@
  * Config diff view — shows what will change before applying.
  */
 
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useMemo } from "react";
 
 interface ConfigDiffDialogProps {
   open: boolean;

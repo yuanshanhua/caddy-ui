@@ -2,8 +2,8 @@
  * Card component for content sections.
  */
 
+import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
-import { type HTMLAttributes, forwardRef } from "react";
 
 export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (

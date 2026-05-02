@@ -2,8 +2,8 @@
  * Placeholder pages for features to be implemented in later phases.
  */
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Construction } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 function PlaceholderPage({ title, description }: { title: string; description: string }) {
   return (

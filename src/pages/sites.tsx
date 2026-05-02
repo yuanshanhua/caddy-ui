@@ -2,6 +2,9 @@
  * Sites page — list all HTTP servers with CRUD operations.
  */
 
+import { ExternalLink, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ServerFormDialog } from "@/components/sites/server-form-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +13,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useConfig } from "@/hooks/use-config";
 import { useCreateSite, useDeleteSite, useEnsureHttpApp } from "@/hooks/use-sites";
 import type { HttpServer } from "@/types/http-app";
-import { ExternalLink, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
 
 export function SitesPage() {
   const { data: config, isLoading, isError, error } = useConfig();

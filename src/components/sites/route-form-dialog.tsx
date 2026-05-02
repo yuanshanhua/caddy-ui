@@ -2,6 +2,7 @@
  * Dialog for creating/editing a route within a server.
  */
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,7 +18,6 @@ import { Select } from "@/components/ui/select";
 import type { HttpHandler } from "@/types/handlers";
 import type { HttpRoute } from "@/types/http-app";
 import type { RequestMatcher } from "@/types/matchers";
-import { useEffect, useState } from "react";
 
 interface RouteFormDialogProps {
   open: boolean;

@@ -2,10 +2,10 @@
  * Certificate list component — displays auto-managed and loaded certificates.
  */
 
+import { Globe, KeyRound, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TlsCertificates } from "@/types/tls-app";
-import { Globe, KeyRound, ShieldCheck } from "lucide-react";
 
 interface CertificateListProps {
   certificates?: TlsCertificates;

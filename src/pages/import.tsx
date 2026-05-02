@@ -5,16 +5,16 @@
  * Caddy's /adapt endpoint, preview the result, and apply it as the running config.
  */
 
+import { AlertTriangle, FileUp, Play, RotateCcw, Upload } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdaptCaddyfile, useConfigLoad } from "@/hooks/use-config";
-import { AlertTriangle, FileUp, Play, RotateCcw, Upload } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
 
 export function ImportPage() {
   const [caddyfile, setCaddyfile] = useState("");

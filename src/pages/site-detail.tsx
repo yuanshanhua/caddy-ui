@@ -2,6 +2,9 @@
  * Site Detail page — view and manage routes for a specific server.
  */
 
+import { ArrowLeft, GripVertical, Pencil, Plus, Settings, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { RouteFormDialog } from "@/components/sites/route-form-dialog";
 import { ServerFormDialog } from "@/components/sites/server-form-dialog";
@@ -12,9 +15,6 @@ import { useConfig } from "@/hooks/use-config";
 import { useAddRoute, useDeleteRoute, useUpdateRoute } from "@/hooks/use-routes";
 import { useUpdateSite } from "@/hooks/use-sites";
 import type { HttpRoute } from "@/types/http-app";
-import { ArrowLeft, GripVertical, Pencil, Plus, Settings, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
 
 export function SiteDetailPage() {
   const { serverId } = useParams<{ serverId: string }>();

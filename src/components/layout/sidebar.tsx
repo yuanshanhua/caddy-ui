@@ -2,8 +2,6 @@
  * Sidebar navigation component.
  */
 
-import { cn } from "@/lib/utils";
-import { useUiStore } from "@/stores/ui";
 import {
   ArrowUpDown,
   FileCode,
@@ -14,6 +12,8 @@ import {
   Shield,
 } from "lucide-react";
 import { NavLink } from "react-router";
+import { cn } from "@/lib/utils";
+import { useUiStore } from "@/stores/ui";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },

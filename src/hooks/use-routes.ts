@@ -2,10 +2,10 @@
  * Hook for route-level CRUD operations within a server.
  */
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { configApi } from "@/api/config";
 import { configKeys } from "@/hooks/use-config";
 import type { HttpRoute } from "@/types/http-app";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /** Add a route to a server. */
 export function useAddRoute() {

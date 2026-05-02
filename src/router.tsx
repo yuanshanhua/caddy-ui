@@ -2,6 +2,7 @@
  * Application router configuration.
  */
 
+import { createBrowserRouter } from "react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { DashboardPage } from "@/pages/dashboard";
 import { ImportPage } from "@/pages/import";
@@ -10,7 +11,6 @@ import { RawConfigPage } from "@/pages/raw-config";
 import { SiteDetailPage } from "@/pages/site-detail";
 import { SitesPage } from "@/pages/sites";
 import { TlsPage } from "@/pages/tls";
-import { createBrowserRouter } from "react-router";
 
 export const router = createBrowserRouter(
   [
