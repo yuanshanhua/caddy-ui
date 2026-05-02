@@ -79,3 +79,10 @@ export function useConfigLoad() {
     },
   });
 }
+
+/** Adapt a Caddyfile to JSON config (does not apply). */
+export function useAdaptCaddyfile() {
+  return useMutation({
+    mutationFn: (caddyfile: string) => configApi.adapt(caddyfile),
+  });
+}

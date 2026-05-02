@@ -50,8 +50,13 @@ export async function request<T>(path: string, options?: RequestOptions): Promis
   let bodyStr: string | undefined;
 
   if (options?.body !== undefined) {
-    headers.set("Content-Type", "application/json");
-    bodyStr = JSON.stringify(options.body);
+    if (typeof options.body === "string" && headers.has("Content-Type")) {
+      // String body with caller-specified Content-Type (e.g., text/caddyfile) — pass through
+      bodyStr = options.body;
+    } else {
+      headers.set("Content-Type", "application/json");
+      bodyStr = JSON.stringify(options.body);
+    }
   }
 
   let response: Response;

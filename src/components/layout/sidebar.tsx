@@ -4,12 +4,13 @@
 
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui";
-import { ArrowUpDown, FileCode, Globe, LayoutDashboard, Settings, Shield } from "lucide-react";
+import { ArrowUpDown, FileCode, FileUp, Globe, LayoutDashboard, Settings, Shield } from "lucide-react";
 import { NavLink } from "react-router";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/sites", icon: Globe, label: "Sites" },
+  { to: "/import", icon: FileUp, label: "Import" },
   { to: "/upstreams", icon: ArrowUpDown, label: "Upstreams" },
   { to: "/tls", icon: Shield, label: "TLS / Certs" },
   { to: "/global", icon: Settings, label: "Global Config" },

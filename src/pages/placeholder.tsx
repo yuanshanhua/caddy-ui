@@ -34,15 +34,6 @@ export function UpstreamsPage() {
   );
 }
 
-export function TlsPage() {
-  return (
-    <PlaceholderPage
-      title="TLS / Certificates"
-      description="Manage TLS certificates and automation policies."
-    />
-  );
-}
-
 export function GlobalConfigPage() {
   return (
     <PlaceholderPage

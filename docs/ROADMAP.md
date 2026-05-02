@@ -22,36 +22,43 @@
 - [x] Delete operations with confirmation dialogs
 - [x] CI/CD pipeline (GitHub Actions: lint + typecheck + build)
 
-## Phase 3: Advanced Features
-- [ ] TLS certificate status display
-- [ ] TLS automation policy management
-- [ ] Upstream health monitoring (real-time polling)
-- [ ] Caddyfile import (via /adapt endpoint)
-- [ ] Config templates/presets (common patterns)
-- [ ] Headers middleware configuration
-- [ ] Compression (encode) configuration
-- [ ] Authentication/basicauth configuration
-- [ ] Logging configuration
-- [ ] Undo/revert last change
+## Phase 3a: TLS & Caddyfile ✅
+- [x] Toast notification system (sonner)
+- [x] API client fix for string body passthrough (text/caddyfile)
+- [x] Caddyfile import page (paste/upload → /adapt → preview → apply)
+- [x] TLS certificate status display (auto-managed, file-loaded, PEM, folders)
+- [x] TLS automation policy management (CRUD with ACME/ZeroSSL/Internal issuers)
 
-## Phase 4: UX Polish
+## Phase 3b: Middleware & Matchers
+- [ ] Headers middleware configuration (request/response header add/set/delete)
+- [ ] Compression (encode) configuration (gzip/zstd, min_length)
+- [ ] Advanced matchers (header, query, remote_ip)
+- [ ] BasicAuth configuration (users, password hash generation)
+- [ ] URI Rewrite handler
+- [ ] CORS quick-configuration (built on headers middleware)
+
+## Phase 3c: Operations & Monitoring
+- [ ] Upstream health monitoring page (real-time polling with status cards)
+- [ ] Logging configuration (log output, format, level per server)
+- [ ] Config templates/presets (common patterns: WordPress, SPA, API gateway)
+- [ ] Undo/revert last change (via config diff + reload)
+
+## Phase 4: UX & Editor
+- [ ] Monaco editor integration (JSON + Caddyfile syntax highlighting)
 - [ ] Dark mode support
-- [ ] Monaco editor integration (replace textarea)
+- [ ] Config history (IndexedDB snapshots with timestamps)
+- [ ] Export/import config backup (download/upload JSON)
+- [ ] Responsive design (mobile-friendly layout)
 - [ ] Keyboard shortcuts
 - [ ] Search across config
-- [ ] Responsive design (mobile)
-- [ ] Toast notifications for background operations
-- [ ] Config history (local storage snapshots)
-- [ ] Export/import config backup (download/upload JSON)
 
 ## Phase 5: Advanced Operations
 - [ ] Multi-site wizard (guided setup for common patterns)
 - [ ] DNS challenge configuration helper
-- [ ] Upstream health dashboard with graphs
-- [ ] Config validation with helpful error messages
 - [ ] Bulk operations (enable/disable multiple sites)
+- [ ] CEL expression matcher editor
 - [ ] Integration with caddy-l4 (TCP/UDP proxy)
-- [ ] Optional companion plugin for enhanced features
+- [ ] Config validation with helpful error messages
 
 ## Non-Goals (Explicit)
 - No user/session management (Caddy's basicauth handles this)
