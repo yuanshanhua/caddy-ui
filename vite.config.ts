@@ -1,7 +1,7 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "node:path";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -17,6 +17,13 @@ export default defineConfig({
         target: "http://localhost:2019",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ui\/api/, ""),
+        configure: (proxy) => {
+          // Remove Sec-Fetch-Mode so Caddy's admin API treats the request
+          // as a non-browser client, bypassing origin enforcement
+          proxy.on("proxyReq", (proxyReq) => {
+            proxyReq.removeHeader("sec-fetch-mode");
+          });
+        },
       },
     },
   },
