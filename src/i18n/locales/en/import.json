@@ -32,5 +32,6 @@
   "warnings": {
     "title_one": "Warnings ({{count}})",
     "title_other": "Warnings ({{count}})"
-  }
+  },
+  "uploadSuccess": "Caddyfile loaded"
 }

@@ -4,6 +4,8 @@
     "subtitle": "View and edit the full Caddy JSON configuration.",
     "jsonTitle": "JSON Configuration",
     "jsonDescription": "Edit the configuration below and click \"Apply\" to load it via POST /load.",
+    "diffTitle": "Diff: Current vs Caddyfile",
+    "diffDescription": "Left (editable): current config. Right (read-only): converted from Caddyfile.",
     "unsavedChanges": "Unsaved changes",
     "loadError": "Failed to load: {{message}}",
     "applyError": "Failed to apply config: {{message}}",

@@ -4,22 +4,23 @@
  * Provides:
  * - Full JSON config editing with Monaco editor
  * - Export/import JSON backups
- * - Caddyfile import (paste/upload → adapt → preview → apply)
+ * - Caddyfile import (paste/upload → adapt → diff view → apply)
  */
 
-import Editor, { useMonaco } from "@monaco-editor/react";
+import Editor, { DiffEditor, useMonaco } from "@monaco-editor/react";
 import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
   Copy,
   Download,
-  FileUp,
   Play,
   RotateCcw,
   Save,
   Upload,
+  X,
 } from "lucide-react";
+import type { editor } from "monaco-editor";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -61,13 +62,16 @@ export function RawConfigPage() {
   // JSON editor state
   const [editedJson, setEditedJson] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
-  const jsonFileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Caddyfile import state
   const [showCaddyfileImport, setShowCaddyfileImport] = useState(false);
   const [caddyfile, setCaddyfile] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const caddyfileInputRef = useRef<HTMLInputElement>(null);
+
+  // Diff view state: when a Caddyfile is converted, show diff instead of normal editor
+  const [diffTarget, setDiffTarget] = useState<string | null>(null);
+  const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
 
   // Register Caddyfile language with Monaco
   useEffect(() => {
@@ -93,15 +97,9 @@ export function RawConfigPage() {
     [hasChanges, parseError, currentJson, editedJson],
   );
 
-  // Caddyfile state
+  // Caddyfile derived state
   const hasCaddyfileContent = caddyfile.trim().length > 0;
-  const adaptedConfig = adaptMutation.data?.result ?? null;
   const warnings = adaptMutation.data?.warnings?.map((w) => w.message) ?? [];
-  const hasPreview = adaptedConfig !== null;
-  const jsonPreview = useMemo(
-    () => (adaptedConfig ? JSON.stringify(adaptedConfig, null, 2) : ""),
-    [adaptedConfig],
-  );
 
   // === JSON Editor Handlers ===
 
@@ -149,20 +147,27 @@ export function RawConfigPage() {
     URL.revokeObjectURL(url);
   }
 
-  function handleImportJsonFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
       const content = ev.target?.result;
       if (typeof content !== "string") return;
+
+      // Detect file type: JSON or Caddyfile
       try {
         JSON.parse(content);
+        // Valid JSON — load into editor
         setEditedJson(content);
         setParseError(null);
         toast.success(t("rawConfig.importSuccess"));
       } catch {
-        toast.error(t("rawConfig.importError"));
+        // Not JSON — treat as Caddyfile
+        setCaddyfile(content);
+        setShowCaddyfileImport(true);
+        adaptMutation.reset();
+        toast.success(ti("uploadSuccess", { defaultValue: "Caddyfile loaded" }));
       }
     };
     reader.readAsText(file);
@@ -171,26 +176,14 @@ export function RawConfigPage() {
 
   // === Caddyfile Import Handlers ===
 
-  function handleCaddyfileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result;
-      if (typeof content === "string") {
-        setCaddyfile(content);
-        adaptMutation.reset();
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }
-
   function handleConvert() {
     if (!hasCaddyfileContent) return;
     adaptMutation.mutate(caddyfile, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         toast.success(ti("convertSuccess"));
+        // Enter diff view
+        const converted = JSON.stringify(data.result, null, 2);
+        setDiffTarget(converted);
       },
       onError: (err) => {
         toast.error(ti("convertError"), { description: err.message });
@@ -198,20 +191,51 @@ export function RawConfigPage() {
     });
   }
 
+  function handleApplyDiff() {
+    if (!diffTarget) return;
+    setConfirmOpen(true);
+  }
+
   function handleConfirmApply() {
-    if (!adaptedConfig) return;
-    loadMutation.mutate(adaptedConfig, {
-      onSuccess: () => {
-        toast.success(ti("applySuccess"));
-        setConfirmOpen(false);
-        setCaddyfile("");
-        adaptMutation.reset();
-      },
-      onError: (err) => {
-        toast.error(ti("applyError"), { description: err.message });
-        setConfirmOpen(false);
-      },
-    });
+    if (!diffTarget) return;
+    try {
+      const parsed = JSON.parse(diffTarget) as Record<string, unknown>;
+      loadMutation.mutate(parsed, {
+        onSuccess: () => {
+          toast.success(ti("applySuccess"));
+          setConfirmOpen(false);
+          setDiffTarget(null);
+          setCaddyfile("");
+          adaptMutation.reset();
+          setEditedJson(null);
+        },
+        onError: (err) => {
+          toast.error(ti("applyError"), { description: err.message });
+          setConfirmOpen(false);
+        },
+      });
+    } catch {
+      toast.error(t("rawConfig.importError"));
+      setConfirmOpen(false);
+    }
+  }
+
+  function handleCancelDiff() {
+    // Keep edits from the original side of the diff editor
+    if (diffEditorRef.current) {
+      const editedValue = diffEditorRef.current.getOriginalEditor().getValue();
+      if (editedValue !== currentJson) {
+        setEditedJson(editedValue);
+        // Validate
+        try {
+          JSON.parse(editedValue);
+          setParseError(null);
+        } catch (e) {
+          setParseError(e instanceof Error ? e.message : "Invalid JSON");
+        }
+      }
+    }
+    setDiffTarget(null);
   }
 
   function handleCaddyfileReset() {
@@ -254,27 +278,29 @@ export function RawConfigPage() {
           <p className="text-muted-foreground">{t("rawConfig.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          {hasChanges && <Badge variant="warning">{t("rawConfig.unsavedChanges")}</Badge>}
+          {hasChanges && !diffTarget && (
+            <Badge variant="warning">{t("rawConfig.unsavedChanges")}</Badge>
+          )}
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4" />
             {t("rawConfig.export")}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()}>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
             <Upload className="h-4 w-4" />
             {t("rawConfig.import")}
           </Button>
           <input
-            ref={jsonFileInputRef}
+            ref={fileInputRef}
             type="file"
-            accept=".json"
+            accept=".json,.caddyfile,.Caddyfile,Caddyfile"
             className="hidden"
-            onChange={handleImportJsonFile}
+            onChange={handleImportFile}
           />
           <Button variant="outline" size="sm" onClick={handleCopy}>
             <Copy className="h-4 w-4" />
             {tc("actions.copy")}
           </Button>
-          {hasChanges && (
+          {hasChanges && !diffTarget && (
             <>
               <Button variant="outline" size="sm" onClick={handleReset}>
                 <RotateCcw className="h-4 w-4" />
@@ -294,7 +320,7 @@ export function RawConfigPage() {
       </div>
 
       {/* Warnings */}
-      {parseError && (
+      {parseError && !diffTarget && (
         <Card className="border-destructive">
           <CardContent className="pt-4 pb-4">
             <p className="text-sm text-destructive font-mono">{parseError}</p>
@@ -302,7 +328,7 @@ export function RawConfigPage() {
         </Card>
       )}
 
-      {adminChanged && (
+      {adminChanged && !diffTarget && (
         <Card className="border-amber-500/50">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-start gap-2">
@@ -330,37 +356,7 @@ export function RawConfigPage() {
         </Card>
       )}
 
-      {/* JSON Editor */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">{t("rawConfig.jsonTitle")}</CardTitle>
-          <CardDescription>{t("rawConfig.jsonDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border overflow-hidden">
-            <Editor
-              height="600px"
-              defaultLanguage="json"
-              value={displayJson}
-              onChange={handleJsonChange}
-              theme={monacoTheme}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                fontFamily: "JetBrains Mono, monospace",
-                lineNumbers: "on",
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                tabSize: 2,
-                wordWrap: "on",
-                formatOnPaste: true,
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Caddyfile Import Section (collapsible) */}
+      {/* Caddyfile Import Section (collapsible, above JSON editor) */}
       <Card>
         <CardHeader className="pb-3">
           <button
@@ -397,7 +393,7 @@ export function RawConfigPage() {
               </div>
             </div>
 
-            {/* Caddyfile Editor */}
+            {/* Caddyfile Editor toolbar */}
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">{ti("caddyfile.adaptHint")}</p>
               <div className="flex items-center gap-2">
@@ -407,24 +403,10 @@ export function RawConfigPage() {
                     {tc("actions.reset")}
                   </Button>
                 )}
-                <input
-                  ref={caddyfileInputRef}
-                  type="file"
-                  accept=".caddyfile,.Caddyfile,Caddyfile"
-                  className="hidden"
-                  onChange={handleCaddyfileUpload}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => caddyfileInputRef.current?.click()}
-                >
-                  <Upload className="h-3 w-3" />
-                  {ti("uploadFile")}
-                </Button>
               </div>
             </div>
 
+            {/* Caddyfile Monaco Editor */}
             <div className="rounded-md border overflow-hidden">
               <Editor
                 height="300px"
@@ -432,7 +414,7 @@ export function RawConfigPage() {
                 value={caddyfile}
                 onChange={(value) => {
                   setCaddyfile(value ?? "");
-                  if (adaptedConfig) adaptMutation.reset();
+                  if (adaptMutation.data) adaptMutation.reset();
                 }}
                 theme={monacoTheme}
                 options={{
@@ -446,16 +428,6 @@ export function RawConfigPage() {
                   wordWrap: "on",
                 }}
               />
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                onClick={handleConvert}
-                disabled={!hasCaddyfileContent || adaptMutation.isPending}
-              >
-                <Play className="h-4 w-4" />
-                {adaptMutation.isPending ? ti("converting") : ti("convertPreview")}
-              </Button>
             </div>
 
             {/* Warnings from adapt */}
@@ -475,52 +447,101 @@ export function RawConfigPage() {
               </div>
             )}
 
-            {/* JSON Preview from Caddyfile */}
-            {hasPreview && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{ti("jsonPreview.title")}</p>
-                    <p className="text-xs text-muted-foreground">{ti("jsonPreview.description")}</p>
-                  </div>
-                  <Badge variant="success">{ti("jsonPreview.readyBadge")}</Badge>
-                </div>
-                <div className="rounded-md border overflow-hidden">
-                  <Editor
-                    height="300px"
-                    language="json"
-                    value={jsonPreview}
-                    theme={monacoTheme}
-                    options={{
-                      readOnly: true,
-                      minimap: { enabled: false },
-                      fontSize: 13,
-                      fontFamily: "JetBrains Mono, monospace",
-                      lineNumbers: "on",
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                      tabSize: 2,
-                      wordWrap: "on",
-                    }}
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Button
-                    onClick={() => setConfirmOpen(true)}
-                    disabled={loadMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <FileUp className="h-4 w-4" />
-                    {loadMutation.isPending ? tc("status.applying") : ti("applyConfig")}
-                  </Button>
-                </div>
-              </div>
-            )}
+            {/* Convert button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleConvert}
+                disabled={!hasCaddyfileContent || adaptMutation.isPending}
+              >
+                <Play className="h-4 w-4" />
+                {adaptMutation.isPending ? ti("converting") : ti("convertPreview")}
+              </Button>
+            </div>
           </CardContent>
         )}
       </Card>
 
-      {/* Confirm apply Caddyfile */}
+      {/* JSON Editor or Diff View */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-medium">
+                {diffTarget ? t("rawConfig.diffTitle") : t("rawConfig.jsonTitle")}
+              </CardTitle>
+              <CardDescription>
+                {diffTarget ? t("rawConfig.diffDescription") : t("rawConfig.jsonDescription")}
+              </CardDescription>
+            </div>
+            {diffTarget && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleCancelDiff}>
+                  <X className="h-4 w-4" />
+                  {tc("actions.cancel")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleApplyDiff}
+                  disabled={loadMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Save className="h-4 w-4" />
+                  {loadMutation.isPending ? tc("status.applying") : tc("actions.apply")}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border overflow-hidden">
+            {diffTarget ? (
+              <DiffEditor
+                height="600px"
+                language="json"
+                original={displayJson}
+                modified={diffTarget}
+                theme={monacoTheme}
+                onMount={(editor) => {
+                  diffEditorRef.current = editor;
+                }}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  fontFamily: "JetBrains Mono, monospace",
+                  lineNumbers: "on",
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  wordWrap: "on",
+                  originalEditable: true,
+                  renderSideBySide: true,
+                  readOnly: true,
+                }}
+              />
+            ) : (
+              <Editor
+                height="600px"
+                defaultLanguage="json"
+                value={displayJson}
+                onChange={handleJsonChange}
+                theme={monacoTheme}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  fontFamily: "JetBrains Mono, monospace",
+                  lineNumbers: "on",
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 2,
+                  wordWrap: "on",
+                  formatOnPaste: true,
+                }}
+              />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Confirm apply Caddyfile config */}
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}

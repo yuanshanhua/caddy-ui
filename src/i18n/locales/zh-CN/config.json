@@ -4,6 +4,8 @@
     "subtitle": "查看和编辑完整的 Caddy JSON 配置。",
     "jsonTitle": "JSON 配置",
     "jsonDescription": "编辑下方配置，点击「应用」通过 POST /load 加载。",
+    "diffTitle": "差异对比：当前配置 vs Caddyfile",
+    "diffDescription": "左侧（可编辑）：当前配置。右侧（只读）：Caddyfile 转换结果。",
     "unsavedChanges": "未保存的更改",
     "loadError": "加载失败：{{message}}",
     "applyError": "应用配置失败：{{message}}",

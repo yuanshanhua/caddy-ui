@@ -32,5 +32,6 @@
   "warnings": {
     "title_one": "警告 ({{count}})",
     "title_other": "警告 ({{count}})"
-  }
+  },
+  "uploadSuccess": "Caddyfile 已加载"
 }
