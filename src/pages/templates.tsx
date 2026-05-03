@@ -119,9 +119,7 @@ export function TemplatesPage() {
             <CardContent className="mt-auto pt-0">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">
-                  {template.routes.length === 1
-                    ? t("routeCount", { count: 1 })
-                    : t("routeCountPlural", { count: template.routes.length })}
+                  {t("routeCount", { count: template.routes.length })}
                 </span>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="sm" onClick={() => handlePreview(template)}>

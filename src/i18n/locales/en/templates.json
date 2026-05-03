@@ -6,8 +6,8 @@
     "api": "API",
     "proxy": "Proxy"
   },
-  "routeCount": "{{count}} route",
-  "routeCountPlural": "{{count}} routes",
+  "routeCount_one": "{{count}} route",
+  "routeCount_other": "{{count}} routes",
   "applied": "Applied",
   "applyTemplate": "Apply",
   "noServers": "No HTTP servers configured. Create a server first before applying templates.",
@@ -17,14 +17,17 @@
   },
   "confirm": {
     "title": "Apply \"{{name}}\"",
-    "selectServer": "Select a server to apply {{count}} route(s) to:",
-    "description": "This will add {{count}} route(s) to server \"{{server}}\". You can edit or remove them later.",
+    "selectServer_one": "Select a server to apply {{count}} route to:",
+    "selectServer_other": "Select a server to apply {{count}} routes to:",
+    "description_one": "This will add {{count}} route to server \"{{server}}\". You can edit or remove it later.",
+    "description_other": "This will add {{count}} routes to server \"{{server}}\". You can edit or remove them later.",
     "confirm": "Apply Template",
     "targetServer": "Target Server",
     "selectPlaceholder": "Select a server..."
   },
   "success": "Template \"{{name}}\" applied",
-  "successDescription": "{{count}} route(s) added to {{server}}",
+  "successDescription_one": "{{count}} route added to {{server}}",
+  "successDescription_other": "{{count}} routes added to {{server}}",
   "error": "Failed to apply template",
   "templates": {
     "spa": {

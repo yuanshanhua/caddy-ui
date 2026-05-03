@@ -6,8 +6,8 @@
     "api": "API",
     "proxy": "代理"
   },
-  "routeCount": "{{count}} 条路由",
-  "routeCountPlural": "{{count}} 条路由",
+  "routeCount_one": "{{count}} 条路由",
+  "routeCount_other": "{{count}} 条路由",
   "applied": "已应用",
   "applyTemplate": "应用",
   "noServers": "未配置 HTTP 服务器。请先创建一个服务器再应用模板。",
@@ -17,14 +17,17 @@
   },
   "confirm": {
     "title": "应用 \"{{name}}\"",
-    "selectServer": "选择一个服务器以应用 {{count}} 条路由：",
-    "description": "这将向服务器 \"{{server}}\" 添加 {{count}} 条路由。之后可以编辑或删除。",
+    "selectServer_one": "选择一个服务器以应用 {{count}} 条路由：",
+    "selectServer_other": "选择一个服务器以应用 {{count}} 条路由：",
+    "description_one": "这将向服务器 \"{{server}}\" 添加 {{count}} 条路由。之后可以编辑或删除。",
+    "description_other": "这将向服务器 \"{{server}}\" 添加 {{count}} 条路由。之后可以编辑或删除。",
     "confirm": "应用模板",
     "targetServer": "目标服务器",
     "selectPlaceholder": "选择一个服务器..."
   },
   "success": "模板 \"{{name}}\" 已应用",
-  "successDescription": "已向 {{server}} 添加 {{count}} 条路由",
+  "successDescription_one": "已向 {{server}} 添加 {{count}} 条路由",
+  "successDescription_other": "已向 {{server}} 添加 {{count}} 条路由",
   "error": "模板应用失败",
   "templates": {
     "spa": {

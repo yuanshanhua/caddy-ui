@@ -30,6 +30,7 @@
     "confirm": "Apply Configuration"
   },
   "warnings": {
-    "title": "Warnings ({{count}})"
+    "title_one": "Warnings ({{count}})",
+    "title_other": "Warnings ({{count}})"
   }
 }

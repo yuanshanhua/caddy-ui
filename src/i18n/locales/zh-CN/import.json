@@ -30,6 +30,7 @@
     "confirm": "应用配置"
   },
   "warnings": {
-    "title": "警告 ({{count}})"
+    "title_one": "警告 ({{count}})",
+    "title_other": "警告 ({{count}})"
   }
 }

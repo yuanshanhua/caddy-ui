@@ -21,6 +21,8 @@
     "description": "确定要删除 \"{{name}}\" 日志配置吗？此操作无法撤销。",
     "confirm": "删除"
   },
-  "include": "包含: {{count}}",
-  "exclude": "排除: {{count}}"
+  "include_one": "包含: {{count}}",
+  "include_other": "包含: {{count}}",
+  "exclude_one": "排除: {{count}}",
+  "exclude_other": "排除: {{count}}"
 }
