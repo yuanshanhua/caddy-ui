@@ -56,6 +56,9 @@ function SortableRouteItem({
 }: SortableRouteItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
+    // Disable the layout animation on drop — we use optimistic reorder so
+    // the DOM order is already correct when the drag ends.
+    animateLayoutChanges: () => false,
   });
 
   const style = {
