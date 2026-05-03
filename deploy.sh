@@ -423,6 +423,8 @@ collect_params() {
   # Install directory
   read -rp "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR
   INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
+  # Expand ~ to $HOME (read does not perform tilde expansion)
+  INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
 
   # Admin API port
   read -rp "$(echo -e "${BLUE}Admin API port${RESET} [$DEFAULT_ADMIN_PORT]: ")" ADMIN_PORT
@@ -431,6 +433,8 @@ collect_params() {
   # Caddyfile path
   read -rp "$(echo -e "${BLUE}Caddyfile path${RESET} [$DEFAULT_CADDYFILE]: ")" CADDYFILE_PATH
   CADDYFILE_PATH="${CADDYFILE_PATH:-$DEFAULT_CADDYFILE}"
+  # Expand ~ to $HOME
+  CADDYFILE_PATH="${CADDYFILE_PATH/#\~/$HOME}"
 
   # Confirm settings
   echo ""
@@ -553,14 +557,22 @@ apply_config() {
 
     echo -e "${BOLD}Manual steps:${RESET}"
     echo ""
-    echo "  1. Backup your current config:"
-    echo -e "     ${DIM}cp $CADDYFILE_PATH ${CADDYFILE_PATH}.bak${RESET}"
-    echo ""
-    echo "  2. Add the UI configuration to your Caddyfile."
-    echo -e "     A copy has been saved to: ${GREEN}$ref_file${RESET}"
-    echo ""
-    echo "  3. Reload Caddy:"
-    echo -e "     ${DIM}caddy reload --config $CADDYFILE_PATH${RESET}"
+    if [[ -f "$CADDYFILE_PATH" ]]; then
+      echo "  1. Backup your current config:"
+      echo -e "     ${DIM}cp $CADDYFILE_PATH ${CADDYFILE_PATH}.bak${RESET}"
+      echo ""
+      echo "  2. Add the UI configuration to your Caddyfile."
+      echo -e "     A copy has been saved to: ${GREEN}$ref_file${RESET}"
+      echo ""
+      echo "  3. Reload Caddy:"
+      echo -e "     ${DIM}caddy reload --config $CADDYFILE_PATH${RESET}"
+    else
+      echo "  1. Copy the configuration to your Caddyfile:"
+      echo -e "     ${DIM}cp $ref_file $CADDYFILE_PATH${RESET}"
+      echo ""
+      echo "  2. Reload Caddy:"
+      echo -e "     ${DIM}caddy reload --config $CADDYFILE_PATH${RESET}"
+    fi
     echo ""
 
     CONFIG_WRITTEN=false
