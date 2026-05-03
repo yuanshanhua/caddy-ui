@@ -20,10 +20,7 @@ export const pkiApi = {
   },
 
   /** Get the certificate chain for a CA (PEM format, returned as text). */
-  getCaCerts: async (caId: string): Promise<string> => {
-    const response = await fetch(
-      `${import.meta.env["VITE_CADDY_API_BASE"] ?? "/ui/api"}/pki/ca/${caId}/certificates`,
-    );
-    return response.text();
+  getCaCerts: (caId: string): Promise<string> => {
+    return request<string>(`/pki/ca/${caId}/certificates`);
   },
 };
