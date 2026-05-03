@@ -538,13 +538,16 @@ is_caddy_running() {
 apply_config() {
   echo ""
 
-  if is_caddy_running; then
-    # Case A: Caddy is running - print only
+  local caddyfile_dir
+  caddyfile_dir=$(dirname "$CADDYFILE_PATH")
+
+  if is_caddy_running && [[ -f "$CADDYFILE_PATH" ]]; then
+    # Case A: Caddy is running AND existing Caddyfile exists - print only
     echo -e "${YELLOW}${BOLD}========================================${RESET}"
     echo -e "${YELLOW}${BOLD} Caddy is currently running${RESET}"
     echo -e "${YELLOW}${BOLD}========================================${RESET}"
     echo ""
-    warn "For safety, this script will NOT modify the Caddy configuration"
+    warn "For safety, this script will NOT modify the existing Caddy configuration"
     warn "while Caddy is running. Please apply the config manually."
     echo ""
     echo -e "${BOLD}Generated Caddyfile:${RESET}"
@@ -565,87 +568,91 @@ apply_config() {
 
     echo -e "${BOLD}Manual steps:${RESET}"
     echo ""
-    if [[ -f "$CADDYFILE_PATH" ]]; then
-      echo "  1. Backup your current config:"
-      echo -e "     ${DIM}cp $CADDYFILE_PATH ${CADDYFILE_PATH}.bak${RESET}"
-      echo ""
-      echo "  2. Add the UI configuration to your Caddyfile."
-      echo -e "     A copy has been saved to: ${GREEN}$ref_file${RESET}"
-      echo ""
-      echo "  3. Reload Caddy:"
-      echo -e "     ${DIM}caddy reload --config $CADDYFILE_PATH${RESET}"
-    else
-      echo "  1. Copy the configuration to your Caddyfile:"
-      echo -e "     ${DIM}cp $ref_file $CADDYFILE_PATH${RESET}"
-      echo ""
-      echo "  2. Reload Caddy:"
-      echo -e "     ${DIM}caddy reload --config $CADDYFILE_PATH${RESET}"
-    fi
+    echo "  1. Backup your current config:"
+    echo -e "     ${DIM}cp $CADDYFILE_PATH ${CADDYFILE_PATH}.bak${RESET}"
+    echo ""
+    echo "  2. Add the UI configuration to your Caddyfile."
+    echo -e "     A copy has been saved to: ${GREEN}$ref_file${RESET}"
+    echo ""
+    echo "  3. Reload Caddy:"
+    echo -e "     ${DIM}caddy reload --config $CADDYFILE_PATH${RESET}"
     echo ""
 
     CONFIG_WRITTEN=false
 
-  else
-    # Case B: Caddy is not running
-    local caddyfile_dir
-    caddyfile_dir=$(dirname "$CADDYFILE_PATH")
+  elif [[ -f "$CADDYFILE_PATH" ]]; then
+    # Case B: Caddy is NOT running but existing Caddyfile exists - warn before overwrite
+    echo ""
+    echo -e "${RED}${BOLD}╔══════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${RED}${BOLD}║                                                      ║${RESET}"
+    echo -e "${RED}${BOLD}║   WARNING: EXISTING CONFIGURATION DETECTED           ║${RESET}"
+    echo -e "${RED}${BOLD}║                                                      ║${RESET}"
+    echo -e "${RED}${BOLD}║   This will OVERWRITE your current Caddyfile at:     ║${RESET}"
+    echo -e "${RED}${BOLD}║   ${CADDYFILE_PATH}$(printf '%*s' $((37 - ${#CADDYFILE_PATH})) '')║${RESET}"
+    echo -e "${RED}${BOLD}║                                                      ║${RESET}"
+    echo -e "${RED}${BOLD}║   ALL existing configuration will be LOST!           ║${RESET}"
+    echo -e "${RED}${BOLD}║                                                      ║${RESET}"
+    echo -e "${RED}${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "${RED}Type ${BOLD}YES${RESET}${RED} (uppercase) to confirm overwrite, or anything else to cancel:${RESET}"
+    read -rp "> " overwrite_confirm < /dev/tty
 
-    if [[ -f "$CADDYFILE_PATH" ]]; then
-      # Existing Caddyfile - show big warning
+    if [[ "$overwrite_confirm" != "YES" ]]; then
+      warn "Overwrite cancelled."
       echo ""
-      echo -e "${RED}${BOLD}╔══════════════════════════════════════════════════════╗${RESET}"
-      echo -e "${RED}${BOLD}║                                                      ║${RESET}"
-      echo -e "${RED}${BOLD}║   WARNING: EXISTING CONFIGURATION DETECTED           ║${RESET}"
-      echo -e "${RED}${BOLD}║                                                      ║${RESET}"
-      echo -e "${RED}${BOLD}║   This will OVERWRITE your current Caddyfile at:     ║${RESET}"
-      echo -e "${RED}${BOLD}║   ${CADDYFILE_PATH}$(printf '%*s' $((37 - ${#CADDYFILE_PATH})) '')║${RESET}"
-      echo -e "${RED}${BOLD}║                                                      ║${RESET}"
-      echo -e "${RED}${BOLD}║   ALL existing configuration will be LOST!           ║${RESET}"
-      echo -e "${RED}${BOLD}║                                                      ║${RESET}"
-      echo -e "${RED}${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
+      echo -e "${BOLD}Generated Caddyfile:${RESET}"
+      echo -e "${DIM}────────────────────────────────────────${RESET}"
+      echo "$GENERATED_CONFIG"
+      echo -e "${DIM}────────────────────────────────────────${RESET}"
       echo ""
-      echo -e "${RED}Type ${BOLD}YES${RESET}${RED} (uppercase) to confirm overwrite, or anything else to cancel:${RESET}"
-      read -rp "> " overwrite_confirm < /dev/tty
 
-      if [[ "$overwrite_confirm" != "YES" ]]; then
-        warn "Overwrite cancelled."
-        echo ""
-        echo -e "${BOLD}Generated Caddyfile:${RESET}"
-        echo -e "${DIM}────────────────────────────────────────${RESET}"
-        echo "$GENERATED_CONFIG"
-        echo -e "${DIM}────────────────────────────────────────${RESET}"
-        echo ""
-
-        # Save reference file
-        local ref_file="${INSTALL_DIR}/caddy-ui.caddyfile"
-        if needs_sudo "$INSTALL_DIR"; then
-          echo "$GENERATED_CONFIG" | run_privileged tee "$ref_file" >/dev/null
-          run_privileged chmod 640 "$ref_file"
-        else
-          echo "$GENERATED_CONFIG" > "$ref_file"
-          chmod 640 "$ref_file"
-        fi
-        info "Config saved to: $ref_file"
-        echo ""
-
-        CONFIG_WRITTEN=false
-        return
-      fi
-
-      # Backup existing Caddyfile
-      local timestamp
-      timestamp=$(date +%Y%m%d_%H%M%S)
-      local backup_path="${CADDYFILE_PATH}.bak.${timestamp}"
-      info "Backing up existing Caddyfile to: $backup_path"
-      if needs_sudo "$caddyfile_dir"; then
-        run_privileged cp "$CADDYFILE_PATH" "$backup_path"
+      # Save reference file
+      local ref_file="${INSTALL_DIR}/caddy-ui.caddyfile"
+      if needs_sudo "$INSTALL_DIR"; then
+        echo "$GENERATED_CONFIG" | run_privileged tee "$ref_file" >/dev/null
+        run_privileged chmod 640 "$ref_file"
       else
-        cp "$CADDYFILE_PATH" "$backup_path"
+        echo "$GENERATED_CONFIG" > "$ref_file"
+        chmod 640 "$ref_file"
       fi
-      success "Backup created."
+      info "Config saved to: $ref_file"
+      echo ""
+
+      CONFIG_WRITTEN=false
+      return
     fi
 
+    # Backup existing Caddyfile
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
+    local backup_path="${CADDYFILE_PATH}.bak.${timestamp}"
+    info "Backing up existing Caddyfile to: $backup_path"
+    if needs_sudo "$caddyfile_dir"; then
+      run_privileged cp "$CADDYFILE_PATH" "$backup_path"
+    else
+      cp "$CADDYFILE_PATH" "$backup_path"
+    fi
+    success "Backup created."
+
     # Write new Caddyfile
+    info "Writing Caddyfile to: $CADDYFILE_PATH"
+    if needs_sudo "$caddyfile_dir"; then
+      run_privileged mkdir -p "$caddyfile_dir"
+      echo "$GENERATED_CONFIG" | run_privileged tee "$CADDYFILE_PATH" >/dev/null
+      run_privileged chmod 640 "$CADDYFILE_PATH"
+    else
+      mkdir -p "$caddyfile_dir"
+      echo "$GENERATED_CONFIG" > "$CADDYFILE_PATH"
+      chmod 640 "$CADDYFILE_PATH"
+    fi
+    # Set ownership so non-root Caddy can read the config
+    set_config_ownership "$CADDYFILE_PATH"
+    success "Caddyfile written."
+
+    CONFIG_WRITTEN=true
+
+  else
+    # Case C: No existing Caddyfile - write directly
     info "Writing Caddyfile to: $CADDYFILE_PATH"
     if needs_sudo "$caddyfile_dir"; then
       run_privileged mkdir -p "$caddyfile_dir"
