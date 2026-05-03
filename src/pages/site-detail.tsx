@@ -125,6 +125,7 @@ export function SiteDetailPage() {
   const [showRouteForm, setShowRouteForm] = useState(false);
   const [editingRouteIndex, setEditingRouteIndex] = useState<number | null>(null);
   const [deleteRouteIndex, setDeleteRouteIndex] = useState<number | null>(null);
+  const [optimisticRoutes, setOptimisticRoutes] = useState<HttpRoute[] | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -166,7 +167,6 @@ export function SiteDetailPage() {
   const routes = server.routes ?? [];
 
   // Local optimistic route order for smooth drag-and-drop
-  const [optimisticRoutes, setOptimisticRoutes] = useState<HttpRoute[] | null>(null);
   const displayRoutes = optimisticRoutes ?? routes;
 
   // Generate stable sortable IDs for routes
