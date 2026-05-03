@@ -3,9 +3,10 @@
  */
 
 import Editor from "@monaco-editor/react";
-import { AlertTriangle, Copy, RotateCcw, Save } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertTriangle, Copy, Download, RotateCcw, Save, Upload } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,7 @@ export function RawConfigPage() {
   const theme = useUiStore((s) => s.theme);
   const [editedJson, setEditedJson] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentJson = config ? JSON.stringify(config, null, 2) : "";
   const displayJson = editedJson ?? currentJson;
@@ -77,6 +79,37 @@ export function RawConfigPage() {
     void navigator.clipboard.writeText(displayJson);
   }
 
+  function handleExport() {
+    const blob = new Blob([displayJson], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `caddy-config-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result;
+      if (typeof content !== "string") return;
+      try {
+        JSON.parse(content);
+        setEditedJson(content);
+        setParseError(null);
+        toast.success(t("rawConfig.importSuccess"));
+      } catch {
+        toast.error(t("rawConfig.importError"));
+      }
+    };
+    reader.readAsText(file);
+    // Reset so the same file can be re-imported
+    e.target.value = "";
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -110,6 +143,21 @@ export function RawConfigPage() {
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && <Badge variant="warning">{t("rawConfig.unsavedChanges")}</Badge>}
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="h-4 w-4" />
+            {t("rawConfig.export")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4" />
+            {t("rawConfig.import")}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImportFile}
+          />
           <Button variant="outline" size="sm" onClick={handleCopy}>
             <Copy className="h-4 w-4" />
             {tc("actions.copy")}

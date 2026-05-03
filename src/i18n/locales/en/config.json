@@ -10,7 +10,11 @@
     "adminWarning": {
       "title": "Admin API configuration changed",
       "description": "Modifying the admin section may cause this UI to lose connectivity. If you change the admin listen address or disable the API, the panel will not be able to communicate with Caddy until the configuration is corrected manually."
-    }
+    },
+    "export": "Export",
+    "import": "Import",
+    "importSuccess": "Configuration imported successfully",
+    "importError": "Failed to import: invalid JSON file"
   },
   "globalConfig": {
     "title": "Global Configuration",

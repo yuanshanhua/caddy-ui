@@ -10,7 +10,11 @@
     "adminWarning": {
       "title": "管理 API 配置已更改",
       "description": "修改 admin 部分可能导致此面板失去连接。如果更改了管理 API 的监听地址或禁用了 API，面板将无法与 Caddy 通信，直到手动修正配置。"
-    }
+    },
+    "export": "导出",
+    "import": "导入",
+    "importSuccess": "配置导入成功",
+    "importError": "导入失败：无效的 JSON 文件"
   },
   "globalConfig": {
     "title": "全局配置",
