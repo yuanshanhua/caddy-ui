@@ -148,6 +148,59 @@ needs_sudo() {
   [[ ! -w "$dir" ]]
 }
 
+# Detect the group that Caddy runs as (for file ownership)
+detect_caddy_group() {
+  # Method 1: Check systemd unit for Group= directive
+  if command -v systemctl &>/dev/null; then
+    local unit_group
+    unit_group=$(systemctl show caddy -p Group 2>/dev/null | cut -d= -f2)
+    if [[ -n "$unit_group" && "$unit_group" != "[not set]" ]]; then
+      # Verify the group exists
+      if getent group "$unit_group" &>/dev/null; then
+        echo "$unit_group"
+        return 0
+      fi
+    fi
+  fi
+
+  # Method 2: Check if a running caddy process reveals its group
+  local caddy_pid
+  caddy_pid=$(pgrep -x caddy | head -1)
+  if [[ -n "$caddy_pid" ]]; then
+    local proc_group
+    proc_group=$(ps -o group= -p "$caddy_pid" 2>/dev/null | tr -d ' ')
+    if [[ -n "$proc_group" && "$proc_group" != "root" ]]; then
+      echo "$proc_group"
+      return 0
+    fi
+  fi
+
+  # Method 3: Check if 'caddy' group exists (common default)
+  if getent group caddy &>/dev/null; then
+    echo "caddy"
+    return 0
+  fi
+
+  # No caddy group found
+  return 1
+}
+
+# Set correct ownership on a config file so Caddy can read it
+set_config_ownership() {
+  local file="$1"
+  local caddy_group
+
+  if caddy_group=$(detect_caddy_group); then
+    info "Detected Caddy group: ${BOLD}$caddy_group${RESET}"
+    if needs_sudo "$(dirname "$file")"; then
+      run_privileged chown "root:$caddy_group" "$file"
+    else
+      chown "root:$caddy_group" "$file" 2>/dev/null || true
+    fi
+  fi
+  # chmod 640 is already set by the caller
+}
+
 # =============================================================================
 # Prerequisite Checks
 # =============================================================================
@@ -424,20 +477,7 @@ generate_caddyfile() {
 }
 
 ${DOMAIN} {
-    # Caddy UI - Static files
-    @ui path /ui /ui/*
-    handle @ui {
-        basicauth {
-            ${AUTH_USER} ${PASS_HASH}
-        }
-        uri strip_prefix /ui
-        file_server {
-            root ${INSTALL_DIR}/dist
-            try_files {path} /index.html
-        }
-    }
-
-    # Caddy UI - API reverse proxy
+    # Caddy UI - API reverse proxy (must be matched before static files)
     @ui-api path /ui/api /ui/api/*
     handle @ui-api {
         basicauth {
@@ -445,6 +485,18 @@ ${DOMAIN} {
         }
         uri strip_prefix /ui/api
         reverse_proxy localhost:${ADMIN_PORT}
+    }
+
+    # Caddy UI - Static files
+    @ui path /ui /ui/*
+    handle @ui {
+        basicauth {
+            ${AUTH_USER} ${PASS_HASH}
+        }
+        uri strip_prefix /ui
+        root * ${INSTALL_DIR}/dist
+        try_files {path} /index.html
+        file_server
     }
 
     # Your other site configurations go below
@@ -584,6 +636,8 @@ apply_config() {
       echo "$GENERATED_CONFIG" > "$CADDYFILE_PATH"
       chmod 640 "$CADDYFILE_PATH"
     fi
+    # Set ownership so non-root Caddy can read the config
+    set_config_ownership "$CADDYFILE_PATH"
     success "Caddyfile written."
 
     CONFIG_WRITTEN=true
@@ -646,6 +700,11 @@ download_and_install() {
     run_privileged tar -xzf "$tarball" -C "$INSTALL_DIR/dist"
     run_privileged find "$INSTALL_DIR/dist" -type f -exec chmod 644 {} \;
     run_privileged find "$INSTALL_DIR/dist" -type d -exec chmod 755 {} \;
+    # Set group ownership so non-root Caddy can read files
+    local caddy_group
+    if caddy_group=$(detect_caddy_group); then
+      run_privileged chown -R "root:$caddy_group" "$INSTALL_DIR"
+    fi
   else
     mkdir -p "$INSTALL_DIR/dist"
     tar -xzf "$tarball" -C "$INSTALL_DIR/dist"

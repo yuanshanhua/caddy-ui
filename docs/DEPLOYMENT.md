@@ -27,21 +27,7 @@ scp -r dist/ your-server:/opt/caddy-ui/dist
 
 your-domain.com {
   # Protect UI with basic auth
-  @ui path /ui /ui/*
-  handle @ui {
-    basicauth {
-      # Generate hash: caddy hash-password
-      admin $2a$14$YOUR_BCRYPT_HASH_HERE
-    }
-    uri strip_prefix /ui
-    file_server {
-      root /opt/caddy-ui/dist
-      # SPA fallback — serve index.html for all non-file routes
-      try_files {path} /index.html
-    }
-  }
-
-  # Proxy API requests to Admin API
+  # Proxy API requests to Admin API (must be matched before static files)
   @ui-api path /ui/api /ui/api/*
   handle @ui-api {
     basicauth {
@@ -49,6 +35,18 @@ your-domain.com {
     }
     uri strip_prefix /ui/api
     reverse_proxy localhost:2019
+  }
+
+  @ui path /ui /ui/*
+  handle @ui {
+    basicauth {
+      # Generate hash: caddy hash-password
+      admin $2a$14$YOUR_BCRYPT_HASH_HERE
+    }
+    uri strip_prefix /ui
+    root * /opt/caddy-ui/dist
+    try_files {path} /index.html
+    file_server
   }
 
   # ... your other site configuration below ...
@@ -91,23 +89,22 @@ COPY Caddyfile /etc/caddy/Caddyfile
 }
 
 :80 {
-  handle /ui/* {
-    basicauth {
-      admin $2a$14$HASH
-    }
-    uri strip_prefix /ui
-    file_server {
-      root /srv/caddy-ui
-      try_files {path} /index.html
-    }
-  }
-
   handle /ui/api/* {
     basicauth {
       admin $2a$14$HASH
     }
     uri strip_prefix /ui/api
     reverse_proxy localhost:2019
+  }
+
+  handle /ui/* {
+    basicauth {
+      admin $2a$14$HASH
+    }
+    uri strip_prefix /ui
+    root * /srv/caddy-ui
+    try_files {path} /index.html
+    file_server
   }
 }
 ```
