@@ -57,3 +57,17 @@ export function useDeleteRoute() {
     },
   });
 }
+
+/** Reorder routes by replacing the entire routes array. */
+export function useReorderRoutes() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ serverId, routes }: { serverId: string; routes: HttpRoute[] }) => {
+      await configApi.put(`apps/http/servers/${serverId}/routes`, routes);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: configKeys.all });
+    },
+  });
+}

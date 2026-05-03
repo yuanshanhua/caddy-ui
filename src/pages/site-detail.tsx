@@ -2,6 +2,17 @@
  * Site Detail page — view and manage routes for a specific server.
  */
 
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ArrowLeft, GripVertical, Pencil, Plus, Settings, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,9 +24,84 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfig } from "@/hooks/use-config";
-import { useAddRoute, useDeleteRoute, useUpdateRoute } from "@/hooks/use-routes";
+import { useAddRoute, useDeleteRoute, useReorderRoutes, useUpdateRoute } from "@/hooks/use-routes";
 import { useUpdateSite } from "@/hooks/use-sites";
 import type { HttpRoute } from "@/types/http-app";
+
+interface SortableRouteItemProps {
+  id: string;
+  idx: number;
+  route: HttpRoute;
+  label: string;
+  sublabel: string;
+  terminalLabel: string;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function SortableRouteItem({
+  id,
+  idx,
+  route,
+  label,
+  sublabel,
+  terminalLabel,
+  onEdit,
+  onDelete,
+}: SortableRouteItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-center gap-3 rounded-md border px-3 py-3 hover:bg-accent/50 transition-colors ${
+        isDragging ? "opacity-50 shadow-lg z-10 bg-accent" : ""
+      }`}
+    >
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing touch-none"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+      </button>
+      <span className="text-xs text-muted-foreground w-6 shrink-0">#{idx}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium truncate">{label}</span>
+          {route.terminal && (
+            <Badge variant="outline" className="text-xs shrink-0">
+              {terminalLabel}
+            </Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground truncate">{sublabel}</p>
+      </div>
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
+          <Pencil className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-destructive hover:text-destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function SiteDetailPage() {
   const { t } = useTranslation("sites");
@@ -27,11 +113,17 @@ export function SiteDetailPage() {
   const addRoute = useAddRoute();
   const updateRoute = useUpdateRoute();
   const deleteRoute = useDeleteRoute();
+  const reorderRoutes = useReorderRoutes();
 
   const [showServerEdit, setShowServerEdit] = useState(false);
   const [showRouteForm, setShowRouteForm] = useState(false);
   const [editingRouteIndex, setEditingRouteIndex] = useState<number | null>(null);
   const [deleteRouteIndex, setDeleteRouteIndex] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor),
+  );
 
   if (isLoading) {
     return (
@@ -67,6 +159,9 @@ export function SiteDetailPage() {
   }
   const routes = server.routes ?? [];
 
+  // Generate stable sortable IDs for routes
+  const routeIds = routes.map((route, idx) => route["@id"] ?? `route-${idx}`);
+
   function handleServerUpdate(id: string, updatedServer: typeof server) {
     updateSite.mutate(
       { id, server: { ...server, ...updatedServer } },
@@ -93,6 +188,22 @@ export function SiteDetailPage() {
       { serverId, index: deleteRouteIndex },
       { onSuccess: () => setDeleteRouteIndex(null) },
     );
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !serverId) return;
+
+    const oldIndex = routeIds.indexOf(String(active.id));
+    const newIndex = routeIds.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = [...routes];
+    const [moved] = reordered.splice(oldIndex, 1);
+    if (moved) {
+      reordered.splice(newIndex, 0, moved);
+      reorderRoutes.mutate({ serverId, routes: reordered });
+    }
   }
 
   function getRouteDescription(route: HttpRoute): { label: string; sublabel: string } {
@@ -181,49 +292,33 @@ export function SiteDetailPage() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {routes.map((route, idx) => {
-                const { label, sublabel } = getRouteDescription(route);
-                return (
-                  <div
-                    key={route["@id"] ?? `route-${idx}`}
-                    className="group flex items-center gap-3 rounded-md border px-3 py-3 hover:bg-accent/50 transition-colors"
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-xs text-muted-foreground w-6 shrink-0">#{idx}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium truncate">{label}</span>
-                        {route.terminal && (
-                          <Badge variant="outline" className="text-xs shrink-0">
-                            {t("terminal")}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">{sublabel}</p>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => setEditingRouteIndex(idx)}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteRouteIndex(idx)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={routeIds} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {routes.map((route, idx) => {
+                    const { label, sublabel } = getRouteDescription(route);
+                    const id = routeIds[idx] ?? `route-${idx}`;
+                    return (
+                      <SortableRouteItem
+                        key={id}
+                        id={id}
+                        idx={idx}
+                        route={route}
+                        label={label}
+                        sublabel={sublabel}
+                        terminalLabel={t("terminal")}
+                        onEdit={() => setEditingRouteIndex(idx)}
+                        onDelete={() => setDeleteRouteIndex(idx)}
+                      />
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </CardContent>
       </Card>
