@@ -784,6 +784,12 @@ main() {
     die "This script requires interactive input but no terminal is available."
   fi
 
+  # Reclaim stdin from the pipe so read gets full line-editing
+  # (arrow keys, backspace, delete, Home/End, etc.)
+  if [[ ! -t 0 ]]; then
+    exec < /dev/tty
+  fi
+
   # Check prerequisites
   check_prerequisites
 
