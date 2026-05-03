@@ -2,7 +2,8 @@
  * Dialog for creating/editing a named log configuration.
  */
 
-import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,9 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { logFormSchema, logFormDefaults, type LogFormValues } from "@/lib/schemas/log";
 import type { LogConfig, LogWriter } from "@/types/caddy";
 
 interface LogFormDialogProps {
@@ -27,9 +30,75 @@ interface LogFormDialogProps {
   initialLog?: LogConfig;
 }
 
-type OutputType = "stdout" | "stderr" | "file" | "discard";
-type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
-type EncoderFormat = "console" | "json";
+function parseInitialValues(name: string, log: LogConfig): LogFormValues {
+  const writer = log.writer;
+  let outputType: LogFormValues["outputType"] = "stdout";
+  let filename = "";
+  let rollSizeMb = "100";
+  let rollKeep = "5";
+  let rollKeepDays = "90";
+
+  if (writer) {
+    if (writer.output === "file") {
+      outputType = "file";
+      filename = writer.filename ?? "";
+      rollSizeMb = writer.roll_size_mb ? String(writer.roll_size_mb) : "100";
+      rollKeep = writer.roll_keep ? String(writer.roll_keep) : "5";
+      rollKeepDays = writer.roll_keep_days ? String(writer.roll_keep_days) : "90";
+    } else if (writer.output === "discard") {
+      outputType = "discard";
+    } else if (writer.output === "stderr") {
+      outputType = "stderr";
+    }
+  }
+
+  return {
+    name,
+    level: (log.level as LogFormValues["level"]) ?? "INFO",
+    outputType,
+    filename,
+    rollSizeMb,
+    rollKeep,
+    rollKeepDays,
+    encoderFormat: (log.encoder?.format as LogFormValues["encoderFormat"]) ?? "console",
+    includes: log.include?.join(", ") ?? "",
+    excludes: log.exclude?.join(", ") ?? "",
+  };
+}
+
+function toLogConfig(values: LogFormValues): LogConfig {
+  const writer: LogWriter = { output: values.outputType };
+  if (values.outputType === "file" && values.filename.trim()) {
+    writer.filename = values.filename.trim();
+    const sizeMb = Number.parseInt(values.rollSizeMb, 10);
+    if (!Number.isNaN(sizeMb) && sizeMb > 0) writer.roll_size_mb = sizeMb;
+    const keep = Number.parseInt(values.rollKeep, 10);
+    if (!Number.isNaN(keep) && keep > 0) writer.roll_keep = keep;
+    const keepDays = Number.parseInt(values.rollKeepDays, 10);
+    if (!Number.isNaN(keepDays) && keepDays > 0) writer.roll_keep_days = keepDays;
+  }
+
+  const log: LogConfig = {
+    writer,
+    level: values.level,
+    encoder: { format: values.encoderFormat },
+  };
+
+  if (values.includes.trim()) {
+    log.include = values.includes
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  if (values.excludes.trim()) {
+    log.exclude = values.excludes
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  return log;
+}
 
 export function LogFormDialog({
   open,
@@ -43,234 +112,240 @@ export function LogFormDialog({
   const { t: tc } = useTranslation();
   const isEdit = !!initialName;
 
-  const [name, setName] = useState("");
-  const [level, setLevel] = useState<LogLevel>("INFO");
-  const [outputType, setOutputType] = useState<OutputType>("stdout");
-  const [filename, setFilename] = useState("");
-  const [rollSizeMb, setRollSizeMb] = useState("100");
-  const [rollKeep, setRollKeep] = useState("5");
-  const [rollKeepDays, setRollKeepDays] = useState("90");
-  const [encoderFormat, setEncoderFormat] = useState<EncoderFormat>("console");
-  const [includes, setIncludes] = useState("");
-  const [excludes, setExcludes] = useState("");
+  const form = useForm<LogFormValues>({
+    resolver: zodResolver(logFormSchema),
+    defaultValues:
+      isEdit && initialLog
+        ? parseInitialValues(initialName, initialLog)
+        : logFormDefaults,
+    values: open
+      ? isEdit && initialLog
+        ? parseInitialValues(initialName, initialLog)
+        : logFormDefaults
+      : undefined,
+  });
 
-  useEffect(() => {
-    if (!open) return;
+  const outputType = form.watch("outputType");
 
-    if (initialName && initialLog) {
-      setName(initialName);
-      setLevel((initialLog.level as LogLevel) ?? "INFO");
-
-      const writer = initialLog.writer;
-      if (writer) {
-        if (writer.output === "file") {
-          setOutputType("file");
-          setFilename(writer.filename ?? "");
-          setRollSizeMb(writer.roll_size_mb ? String(writer.roll_size_mb) : "100");
-          setRollKeep(writer.roll_keep ? String(writer.roll_keep) : "5");
-          setRollKeepDays(writer.roll_keep_days ? String(writer.roll_keep_days) : "90");
-        } else if (writer.output === "discard") {
-          setOutputType("discard");
-        } else if (writer.output === "stderr") {
-          setOutputType("stderr");
-        } else {
-          setOutputType("stdout");
-        }
-      }
-
-      setEncoderFormat((initialLog.encoder?.format as EncoderFormat) ?? "console");
-      setIncludes(initialLog.include?.join(", ") ?? "");
-      setExcludes(initialLog.exclude?.join(", ") ?? "");
-    } else {
-      setName("");
-      setLevel("INFO");
-      setOutputType("stdout");
-      setFilename("");
-      setRollSizeMb("100");
-      setRollKeep("5");
-      setRollKeepDays("90");
-      setEncoderFormat("console");
-      setIncludes("");
-      setExcludes("");
-    }
-  }, [open, initialName, initialLog]);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-
-    const writer: LogWriter = { output: outputType };
-    if (outputType === "file" && filename.trim()) {
-      writer.filename = filename.trim();
-      const sizeMb = Number.parseInt(rollSizeMb, 10);
-      if (!Number.isNaN(sizeMb) && sizeMb > 0) writer.roll_size_mb = sizeMb;
-      const keep = Number.parseInt(rollKeep, 10);
-      if (!Number.isNaN(keep) && keep > 0) writer.roll_keep = keep;
-      const keepDays = Number.parseInt(rollKeepDays, 10);
-      if (!Number.isNaN(keepDays) && keepDays > 0) writer.roll_keep_days = keepDays;
-    }
-
-    const log: LogConfig = {
-      writer,
-      level,
-      encoder: { format: encoderFormat },
-    };
-
-    if (includes.trim()) {
-      log.include = includes
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-    if (excludes.trim()) {
-      log.exclude = excludes
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-
-    onSubmit(name.trim(), log);
+  function handleFormSubmit(values: LogFormValues) {
+    onSubmit(values.name.trim(), toLogConfig(values));
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)} className="max-w-lg">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{isEdit ? t("logForm.editTitle") : t("logForm.createTitle")}</DialogTitle>
-            <DialogDescription>{t("logForm.description")}</DialogDescription>
-          </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+            <DialogHeader>
+              <DialogTitle>
+                {isEdit ? t("logForm.editTitle") : t("logForm.createTitle")}
+              </DialogTitle>
+              <DialogDescription>{t("logForm.description")}</DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="log-name">{t("logForm.logName")}</Label>
-              <Input
-                id="log-name"
-                placeholder={t("logForm.logNamePlaceholder")}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isEdit}
+            <div className="space-y-4 py-4">
+              {/* Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label htmlFor="log-name">{t("logForm.logName")}</Label>
+                    <FormControl>
+                      <Input
+                        id="log-name"
+                        placeholder={t("logForm.logNamePlaceholder")}
+                        disabled={isEdit}
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">{t("logForm.logNameHint")}</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-xs text-muted-foreground">{t("logForm.logNameHint")}</p>
-            </div>
 
-            {/* Level */}
-            <div className="space-y-2">
-              <Label htmlFor="log-level">{t("logForm.level")}</Label>
-              <Select
-                id="log-level"
-                value={level}
-                onChange={(e) => setLevel(e.target.value as LogLevel)}
-              >
-                <option value="DEBUG">DEBUG</option>
-                <option value="INFO">INFO</option>
-                <option value="WARN">WARN</option>
-                <option value="ERROR">ERROR</option>
-              </Select>
-            </div>
+              {/* Level */}
+              <FormField
+                control={form.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label htmlFor="log-level">{t("logForm.level")}</Label>
+                    <FormControl>
+                      <Select
+                        id="log-level"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <option value="DEBUG">DEBUG</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARN">WARN</option>
+                        <option value="ERROR">ERROR</option>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            {/* Output */}
-            <div className="space-y-2">
-              <Label htmlFor="log-output">{t("logForm.output")}</Label>
-              <Select
-                id="log-output"
-                value={outputType}
-                onChange={(e) => setOutputType(e.target.value as OutputType)}
-              >
-                <option value="stdout">{t("logForm.outputStdout")}</option>
-                <option value="stderr">{t("logForm.outputStderr")}</option>
-                <option value="file">{t("logForm.outputFile")}</option>
-                <option value="discard">{t("logForm.outputDiscard")}</option>
-              </Select>
-            </div>
+              {/* Output */}
+              <FormField
+                control={form.control}
+                name="outputType"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label htmlFor="log-output">{t("logForm.output")}</Label>
+                    <FormControl>
+                      <Select
+                        id="log-output"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <option value="stdout">{t("logForm.outputStdout")}</option>
+                        <option value="stderr">{t("logForm.outputStderr")}</option>
+                        <option value="file">{t("logForm.outputFile")}</option>
+                        <option value="discard">{t("logForm.outputDiscard")}</option>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            {/* File-specific options */}
-            {outputType === "file" && (
-              <div className="space-y-3 pl-3 border-l-2 border-muted">
-                <div className="space-y-2">
-                  <Label htmlFor="log-filename">{t("logForm.filePath")}</Label>
-                  <Input
-                    id="log-filename"
-                    placeholder={t("logForm.filePathPlaceholder")}
-                    value={filename}
-                    onChange={(e) => setFilename(e.target.value)}
+              {/* File-specific options */}
+              {outputType === "file" && (
+                <div className="space-y-3 pl-3 border-l-2 border-muted">
+                  <FormField
+                    control={form.control}
+                    name="filename"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <Label htmlFor="log-filename">{t("logForm.filePath")}</Label>
+                        <FormControl>
+                          <Input
+                            id="log-filename"
+                            placeholder={t("logForm.filePathPlaceholder")}
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
                   />
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="rollSizeMb"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <Label className="text-xs">{t("logForm.maxSize")}</Label>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="rollKeep"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <Label className="text-xs">{t("logForm.keepFiles")}</Label>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="rollKeepDays"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <Label className="text-xs">{t("logForm.keepDays")}</Label>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("logForm.maxSize")}</Label>
-                    <Input
-                      type="number"
-                      value={rollSizeMb}
-                      onChange={(e) => setRollSizeMb(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("logForm.keepFiles")}</Label>
-                    <Input
-                      type="number"
-                      value={rollKeep}
-                      onChange={(e) => setRollKeep(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("logForm.keepDays")}</Label>
-                    <Input
-                      type="number"
-                      value={rollKeepDays}
-                      onChange={(e) => setRollKeepDays(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Format */}
-            <div className="space-y-2">
-              <Label htmlFor="log-format">{t("logForm.encoderFormat")}</Label>
-              <Select
-                id="log-format"
-                value={encoderFormat}
-                onChange={(e) => setEncoderFormat(e.target.value as EncoderFormat)}
-              >
-                <option value="console">{t("logForm.formatConsole")}</option>
-                <option value="json">{t("logForm.formatJson")}</option>
-              </Select>
-            </div>
-
-            {/* Include/Exclude */}
-            <div className="space-y-2">
-              <Label htmlFor="log-include">{t("logForm.includeLoggers")}</Label>
-              <Input
-                id="log-include"
-                placeholder={t("logForm.includePlaceholder")}
-                value={includes}
-                onChange={(e) => setIncludes(e.target.value)}
+              {/* Format */}
+              <FormField
+                control={form.control}
+                name="encoderFormat"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label htmlFor="log-format">{t("logForm.encoderFormat")}</Label>
+                    <FormControl>
+                      <Select
+                        id="log-format"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <option value="console">{t("logForm.formatConsole")}</option>
+                        <option value="json">{t("logForm.formatJson")}</option>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
               />
-              <p className="text-xs text-muted-foreground">{t("logForm.includeHint")}</p>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="log-exclude">{t("logForm.excludeLoggers")}</Label>
-              <Input
-                id="log-exclude"
-                placeholder={t("logForm.excludePlaceholder")}
-                value={excludes}
-                onChange={(e) => setExcludes(e.target.value)}
+              {/* Include/Exclude */}
+              <FormField
+                control={form.control}
+                name="includes"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label htmlFor="log-include">{t("logForm.includeLoggers")}</Label>
+                    <FormControl>
+                      <Input
+                        id="log-include"
+                        placeholder={t("logForm.includePlaceholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">{t("logForm.includeHint")}</p>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="excludes"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <Label htmlFor="log-exclude">{t("logForm.excludeLoggers")}</Label>
+                    <FormControl>
+                      <Input
+                        id="log-exclude"
+                        placeholder={t("logForm.excludePlaceholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {tc("actions.cancel")}
-            </Button>
-            <Button type="submit" disabled={loading || !name.trim()}>
-              {loading ? tc("status.saving") : isEdit ? t("logForm.update") : t("logForm.addLog")}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {tc("actions.cancel")}
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading
+                  ? tc("status.saving")
+                  : isEdit
+                    ? t("logForm.update")
+                    : t("logForm.addLog")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

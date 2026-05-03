@@ -4,7 +4,8 @@
  */
 
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,9 +15,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import {
+  tlsPolicyFormSchema,
+  tlsPolicyFormDefaults,
+  issuerDefaults,
+  type TlsPolicyFormValues,
+  type IssuerFormValues,
+} from "@/lib/schemas/tls-policy";
 import type { AutomationPolicy, TlsIssuer } from "@/types/tls-app";
 
 interface PolicyFormDialogProps {
@@ -27,24 +36,6 @@ interface PolicyFormDialogProps {
   initialPolicy?: AutomationPolicy;
 }
 
-type IssuerModule = "acme" | "zerossl" | "internal";
-
-interface IssuerFormState {
-  module: IssuerModule;
-  email: string;
-  ca: string;
-  httpChallengeDisabled: boolean;
-  tlsAlpnChallengeDisabled: boolean;
-}
-
-const DEFAULT_ISSUER: IssuerFormState = {
-  module: "acme",
-  email: "",
-  ca: "",
-  httpChallengeDisabled: false,
-  tlsAlpnChallengeDisabled: false,
-};
-
 const KEY_TYPES = [
   { value: "", label: "Default" },
   { value: "ed25519", label: "Ed25519" },
@@ -54,9 +45,9 @@ const KEY_TYPES = [
   { value: "rsa4096", label: "RSA 4096" },
 ];
 
-function issuerToFormState(issuer: TlsIssuer): IssuerFormState {
+function issuerToFormState(issuer: TlsIssuer): IssuerFormValues {
   return {
-    module: (issuer.module as IssuerModule) || "acme",
+    module: (issuer.module as IssuerFormValues["module"]) || "acme",
     email: issuer.email ?? "",
     ca: issuer.ca ?? "",
     httpChallengeDisabled: issuer.challenges?.http?.disabled ?? false,
@@ -64,7 +55,7 @@ function issuerToFormState(issuer: TlsIssuer): IssuerFormState {
   };
 }
 
-function formStateToIssuer(state: IssuerFormState): TlsIssuer {
+function formStateToIssuer(state: IssuerFormValues): TlsIssuer {
   const issuer: TlsIssuer = { module: state.module };
 
   if (state.email) {
@@ -89,6 +80,49 @@ function formStateToIssuer(state: IssuerFormState): TlsIssuer {
   return issuer;
 }
 
+function parseInitialValues(policy: AutomationPolicy): TlsPolicyFormValues {
+  return {
+    subjects: policy.subjects?.join(", ") ?? "",
+    issuers:
+      policy.issuers && policy.issuers.length > 0
+        ? policy.issuers.map(issuerToFormState)
+        : [issuerDefaults],
+    keyType: policy.key_type ?? "",
+    onDemand: policy.on_demand ?? false,
+    mustStaple: policy.must_staple ?? false,
+  };
+}
+
+function toPolicy(values: TlsPolicyFormValues): AutomationPolicy {
+  const policy: AutomationPolicy = {};
+
+  const subjectList = values.subjects
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (subjectList.length > 0) {
+    policy.subjects = subjectList;
+  }
+
+  const issuerObjects = values.issuers.map(formStateToIssuer);
+  if (issuerObjects.length > 0) {
+    policy.issuers = issuerObjects;
+  }
+
+  if (values.keyType) {
+    policy.key_type = values.keyType;
+  }
+
+  if (values.onDemand) {
+    policy.on_demand = true;
+  }
+  if (values.mustStaple) {
+    policy.must_staple = true;
+  }
+
+  return policy;
+}
+
 export function PolicyFormDialog({
   open,
   onOpenChange,
@@ -96,81 +130,27 @@ export function PolicyFormDialog({
   loading = false,
   initialPolicy,
 }: PolicyFormDialogProps) {
-  const [subjects, setSubjects] = useState("");
-  const [issuers, setIssuers] = useState<IssuerFormState[]>([DEFAULT_ISSUER]);
-  const [keyType, setKeyType] = useState("");
-  const [onDemand, setOnDemand] = useState(false);
-  const [mustStaple, setMustStaple] = useState(false);
-
   const isEditing = !!initialPolicy;
 
-  // Reset form when dialog opens/closes or initial data changes
-  useEffect(() => {
-    if (open && initialPolicy) {
-      setSubjects(initialPolicy.subjects?.join(", ") ?? "");
-      setIssuers(
-        initialPolicy.issuers && initialPolicy.issuers.length > 0
-          ? initialPolicy.issuers.map(issuerToFormState)
-          : [DEFAULT_ISSUER],
-      );
-      setKeyType(initialPolicy.key_type ?? "");
-      setOnDemand(initialPolicy.on_demand ?? false);
-      setMustStaple(initialPolicy.must_staple ?? false);
-    } else if (open) {
-      setSubjects("");
-      setIssuers([DEFAULT_ISSUER]);
-      setKeyType("");
-      setOnDemand(false);
-      setMustStaple(false);
-    }
-  }, [open, initialPolicy]);
+  const form = useForm<TlsPolicyFormValues>({
+    resolver: zodResolver(tlsPolicyFormSchema),
+    defaultValues: initialPolicy
+      ? parseInitialValues(initialPolicy)
+      : tlsPolicyFormDefaults,
+    values: open
+      ? initialPolicy
+        ? parseInitialValues(initialPolicy)
+        : tlsPolicyFormDefaults
+      : undefined,
+  });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "issuers",
+  });
 
-    const policy: AutomationPolicy = {};
-
-    // Subjects
-    const subjectList = subjects
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (subjectList.length > 0) {
-      policy.subjects = subjectList;
-    }
-
-    // Issuers
-    const issuerObjects = issuers.map(formStateToIssuer);
-    if (issuerObjects.length > 0) {
-      policy.issuers = issuerObjects;
-    }
-
-    // Key type
-    if (keyType) {
-      policy.key_type = keyType;
-    }
-
-    // Options
-    if (onDemand) {
-      policy.on_demand = true;
-    }
-    if (mustStaple) {
-      policy.must_staple = true;
-    }
-
-    onSubmit(policy);
-  }
-
-  function addIssuer() {
-    setIssuers([...issuers, { ...DEFAULT_ISSUER }]);
-  }
-
-  function removeIssuer(index: number) {
-    setIssuers(issuers.filter((_, i) => i !== index));
-  }
-
-  function updateIssuer(index: number, updates: Partial<IssuerFormState>) {
-    setIssuers(issuers.map((iss, i) => (i === index ? { ...iss, ...updates } : iss)));
+  function handleFormSubmit(values: TlsPolicyFormValues) {
+    onSubmit(toPolicy(values));
   }
 
   return (
@@ -186,186 +166,247 @@ export function PolicyFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Subjects */}
-          <div className="space-y-2">
-            <Label htmlFor="subjects">Subjects (domains)</Label>
-            <Input
-              id="subjects"
-              placeholder="example.com, *.example.com, api.example.com"
-              value={subjects}
-              onChange={(e) => setSubjects(e.target.value)}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            {/* Subjects */}
+            <FormField
+              control={form.control}
+              name="subjects"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <Label htmlFor="subjects">Subjects (domains)</Label>
+                  <FormControl>
+                    <Input
+                      id="subjects"
+                      placeholder="example.com, *.example.com, api.example.com"
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Comma-separated list of domains this policy applies to. Leave empty for a
+                    catch-all policy.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-xs text-muted-foreground">
-              Comma-separated list of domains this policy applies to. Leave empty for a catch-all
-              policy.
-            </p>
-          </div>
 
-          {/* Issuers */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>Issuers</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addIssuer}>
-                <Plus className="h-3.5 w-3.5" />
-                Add Issuer
-              </Button>
-            </div>
+            {/* Issuers */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Issuers</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append(issuerDefaults)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Issuer
+                </Button>
+              </div>
 
-            {issuers.map((issuer, index) => (
-              <div key={`issuer-${index}`} className="rounded-lg border p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">Issuer #{index + 1}</p>
-                  {issuers.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeIssuer(index)}
-                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-
-                {/* Issuer module */}
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select
-                    value={issuer.module}
-                    onChange={(e) =>
-                      updateIssuer(index, { module: e.target.value as IssuerModule })
-                    }
-                  >
-                    <option value="acme">ACME (Let's Encrypt)</option>
-                    <option value="zerossl">ZeroSSL</option>
-                    <option value="internal">Internal CA</option>
-                  </Select>
-                </div>
-
-                {/* ACME / ZeroSSL fields */}
-                {(issuer.module === "acme" || issuer.module === "zerossl") && (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input
-                        placeholder="admin@example.com"
-                        value={issuer.email}
-                        onChange={(e) => updateIssuer(index, { email: e.target.value })}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Contact email for the ACME account.
-                      </p>
+              {fields.map((field, index) => {
+                const issuerModule = form.watch(`issuers.${index}.module`);
+                return (
+                  <div key={field.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Issuer #{index + 1}</p>
+                      {fields.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
 
-                    {issuer.module === "acme" && (
-                      <div className="space-y-2">
-                        <Label>CA URL (optional)</Label>
-                        <Input
-                          placeholder="https://acme-v02.api.letsencrypt.org/directory"
-                          value={issuer.ca}
-                          onChange={(e) => updateIssuer(index, { ca: e.target.value })}
+                    {/* Issuer module */}
+                    <FormField
+                      control={form.control}
+                      name={`issuers.${index}.module`}
+                      render={({ field: f }) => (
+                        <FormItem className="space-y-2">
+                          <Label>Type</Label>
+                          <FormControl>
+                            <Select value={f.value} onChange={(e) => f.onChange(e.target.value)}>
+                              <option value="acme">ACME (Let's Encrypt)</option>
+                              <option value="zerossl">ZeroSSL</option>
+                              <option value="internal">Internal CA</option>
+                            </Select>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* ACME / ZeroSSL fields */}
+                    {(issuerModule === "acme" || issuerModule === "zerossl") && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name={`issuers.${index}.email`}
+                          render={({ field: f }) => (
+                            <FormItem className="space-y-2">
+                              <Label>Email</Label>
+                              <FormControl>
+                                <Input placeholder="admin@example.com" {...f} />
+                              </FormControl>
+                              <p className="text-xs text-muted-foreground">
+                                Contact email for the ACME account.
+                              </p>
+                            </FormItem>
+                          )}
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Leave empty for Let's Encrypt production. Use staging URL for testing.
-                        </p>
-                      </div>
+
+                        {issuerModule === "acme" && (
+                          <FormField
+                            control={form.control}
+                            name={`issuers.${index}.ca`}
+                            render={({ field: f }) => (
+                              <FormItem className="space-y-2">
+                                <Label>CA URL (optional)</Label>
+                                <FormControl>
+                                  <Input
+                                    placeholder="https://acme-v02.api.letsencrypt.org/directory"
+                                    {...f}
+                                  />
+                                </FormControl>
+                                <p className="text-xs text-muted-foreground">
+                                  Leave empty for Let's Encrypt production. Use staging URL for
+                                  testing.
+                                </p>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
+                        {/* Challenge toggles */}
+                        <div className="space-y-2">
+                          <Label>Challenges</Label>
+                          <div className="flex flex-col gap-2">
+                            <FormField
+                              control={form.control}
+                              name={`issuers.${index}.httpChallengeDisabled`}
+                              render={({ field: f }) => (
+                                <label className="flex items-center gap-2 text-sm">
+                                  <input
+                                    type="checkbox"
+                                    checked={f.value}
+                                    onChange={f.onChange}
+                                    className="rounded border-input"
+                                  />
+                                  Disable HTTP challenge
+                                </label>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`issuers.${index}.tlsAlpnChallengeDisabled`}
+                              render={({ field: f }) => (
+                                <label className="flex items-center gap-2 text-sm">
+                                  <input
+                                    type="checkbox"
+                                    checked={f.value}
+                                    onChange={f.onChange}
+                                    className="rounded border-input"
+                                  />
+                                  Disable TLS-ALPN challenge
+                                </label>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </>
                     )}
 
-                    {/* Challenge toggles */}
-                    <div className="space-y-2">
-                      <Label>Challenges</Label>
-                      <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={issuer.httpChallengeDisabled}
-                            onChange={(e) =>
-                              updateIssuer(index, { httpChallengeDisabled: e.target.checked })
-                            }
-                            className="rounded border-input"
-                          />
-                          Disable HTTP challenge
-                        </label>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={issuer.tlsAlpnChallengeDisabled}
-                            onChange={(e) =>
-                              updateIssuer(index, { tlsAlpnChallengeDisabled: e.target.checked })
-                            }
-                            className="rounded border-input"
-                          />
-                          Disable TLS-ALPN challenge
-                        </label>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Internal CA note */}
-                {issuer.module === "internal" && (
-                  <p className="text-xs text-muted-foreground">
-                    Uses Caddy's built-in CA to issue certificates. Useful for local development or
-                    internal services.
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Key type */}
-          <div className="space-y-2">
-            <Label>Key Type</Label>
-            <Select value={keyType} onChange={(e) => setKeyType(e.target.value)}>
-              {KEY_TYPES.map((kt) => (
-                <option key={kt.value || "__default"} value={kt.value}>
-                  {kt.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Options */}
-          <div className="space-y-2">
-            <Label>Options</Label>
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={onDemand}
-                  onChange={(e) => setOnDemand(e.target.checked)}
-                  className="rounded border-input"
-                />
-                On-Demand TLS (obtain certificates at handshake time)
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={mustStaple}
-                  onChange={(e) => setMustStaple(e.target.checked)}
-                  className="rounded border-input"
-                />
-                Must-Staple (require OCSP stapling)
-              </label>
+                    {/* Internal CA note */}
+                    {issuerModule === "internal" && (
+                      <p className="text-xs text-muted-foreground">
+                        Uses Caddy's built-in CA to issue certificates. Useful for local development
+                        or internal services.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : isEditing ? "Update Policy" : "Add Policy"}
-            </Button>
-          </DialogFooter>
-        </form>
+            {/* Key type */}
+            <FormField
+              control={form.control}
+              name="keyType"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <Label>Key Type</Label>
+                  <FormControl>
+                    <Select value={field.value} onChange={(e) => field.onChange(e.target.value)}>
+                      {KEY_TYPES.map((kt) => (
+                        <option key={kt.value || "__default"} value={kt.value}>
+                          {kt.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Options */}
+            <div className="space-y-2">
+              <Label>Options</Label>
+              <div className="flex flex-col gap-2">
+                <FormField
+                  control={form.control}
+                  name="onDemand"
+                  render={({ field }) => (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="rounded border-input"
+                      />
+                      On-Demand TLS (obtain certificates at handshake time)
+                    </label>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mustStaple"
+                  render={({ field }) => (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="rounded border-input"
+                      />
+                      Must-Staple (require OCSP stapling)
+                    </label>
+                  )}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Saving..." : isEditing ? "Update Policy" : "Add Policy"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

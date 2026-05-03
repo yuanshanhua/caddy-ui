@@ -4,7 +4,8 @@
  */
 
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,9 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import {
+  reverseProxyFormSchema,
+  reverseProxyDefaults,
+  type ReverseProxyFormValues,
+} from "@/lib/schemas/reverse-proxy";
 import type { ReverseProxyHandler } from "@/types/reverse-proxy";
 
 interface ReverseProxyFormProps {
@@ -27,6 +34,88 @@ interface ReverseProxyFormProps {
   initialHandler?: ReverseProxyHandler;
 }
 
+function parseInitialValues(handler: ReverseProxyHandler): ReverseProxyFormValues {
+  const ups = handler.upstreams?.map((u) => ({
+    dial: u.dial ?? "",
+    maxRequests: u.max_requests ? String(u.max_requests) : "",
+  })) ?? [{ dial: "", maxRequests: "" }];
+
+  const active = handler.health_checks?.active;
+  const passive = handler.health_checks?.passive;
+  const deleteHeaders = handler.headers?.request?.delete ?? [];
+
+  return {
+    upstreams: ups.length > 0 ? ups : [{ dial: "", maxRequests: "" }],
+    lbPolicy: (handler.load_balancing?.selection_policy?.policy as ReverseProxyFormValues["lbPolicy"]) ?? "round_robin",
+    tryDuration: handler.load_balancing?.try_duration ?? "",
+    retries: handler.load_balancing?.retries ? String(handler.load_balancing.retries) : "",
+    healthEnabled: !!active,
+    healthUri: active?.uri ?? "/",
+    healthInterval: active?.interval ?? "30s",
+    healthTimeout: active?.timeout ?? "5s",
+    passiveEnabled: !!passive,
+    maxFails: passive?.max_fails ? String(passive.max_fails) : "3",
+    failDuration: passive?.fail_duration ?? "30s",
+    disableXForwarded:
+      deleteHeaders.includes("X-Forwarded-For") || deleteHeaders.includes("X-Forwarded-Proto"),
+    insecureSkipVerify: handler.transport?.tls?.insecure_skip_verify ?? false,
+  };
+}
+
+function toHandler(values: ReverseProxyFormValues): ReverseProxyHandler {
+  const handler: ReverseProxyHandler = {
+    handler: "reverse_proxy",
+    upstreams: values.upstreams
+      .filter((u) => u.dial.trim())
+      .map((u) => ({
+        dial: u.dial.trim(),
+        ...(u.maxRequests ? { max_requests: Number.parseInt(u.maxRequests, 10) } : {}),
+      })),
+  };
+
+  if (values.lbPolicy !== "round_robin" || values.tryDuration || values.retries) {
+    handler.load_balancing = {
+      selection_policy: { policy: values.lbPolicy },
+      ...(values.tryDuration ? { try_duration: values.tryDuration } : {}),
+      ...(values.retries ? { retries: Number.parseInt(values.retries, 10) } : {}),
+    };
+  }
+
+  if (values.healthEnabled || values.passiveEnabled) {
+    handler.health_checks = {};
+    if (values.healthEnabled) {
+      handler.health_checks.active = {
+        uri: values.healthUri,
+        interval: values.healthInterval,
+        timeout: values.healthTimeout,
+      };
+    }
+    if (values.passiveEnabled) {
+      handler.health_checks.passive = {
+        max_fails: Number.parseInt(values.maxFails, 10),
+        fail_duration: values.failDuration,
+      };
+    }
+  }
+
+  if (values.disableXForwarded) {
+    handler.headers = {
+      request: {
+        delete: ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host"],
+      },
+    };
+  }
+
+  if (values.insecureSkipVerify) {
+    handler.transport = {
+      protocol: "http",
+      tls: { insecure_skip_verify: true },
+    };
+  }
+
+  return handler;
+}
+
 export function ReverseProxyFormDialog({
   open,
   onOpenChange,
@@ -34,357 +123,318 @@ export function ReverseProxyFormDialog({
   loading = false,
   initialHandler,
 }: ReverseProxyFormProps) {
-  // Upstreams
-  const [upstreams, setUpstreams] = useState<Array<{ dial: string; maxRequests: string }>>([
-    { dial: "", maxRequests: "" },
-  ]);
+  const form = useForm<ReverseProxyFormValues>({
+    resolver: zodResolver(reverseProxyFormSchema),
+    defaultValues: initialHandler ? parseInitialValues(initialHandler) : reverseProxyDefaults,
+    values: open
+      ? initialHandler
+        ? parseInitialValues(initialHandler)
+        : reverseProxyDefaults
+      : undefined,
+  });
 
-  // Load balancing
-  const [lbPolicy, setLbPolicy] = useState("round_robin");
-  const [tryDuration, setTryDuration] = useState("");
-  const [retries, setRetries] = useState("");
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "upstreams",
+  });
 
-  // Health checks
-  const [healthEnabled, setHealthEnabled] = useState(false);
-  const [healthUri, setHealthUri] = useState("/");
-  const [healthInterval, setHealthInterval] = useState("30s");
-  const [healthTimeout, setHealthTimeout] = useState("5s");
+  const healthEnabled = form.watch("healthEnabled");
+  const passiveEnabled = form.watch("passiveEnabled");
 
-  // Passive health
-  const [passiveEnabled, setPassiveEnabled] = useState(false);
-  const [maxFails, setMaxFails] = useState("3");
-  const [failDuration, setFailDuration] = useState("30s");
-
-  // Headers — Caddy adds X-Forwarded-* by default; this option disables them
-  const [disableXForwarded, setDisableXForwarded] = useState(false);
-
-  // Transport
-  const [insecureSkipVerify, setInsecureSkipVerify] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    if (initialHandler) {
-      // Parse upstreams
-      const ups = initialHandler.upstreams?.map((u) => ({
-        dial: u.dial ?? "",
-        maxRequests: u.max_requests ? String(u.max_requests) : "",
-      })) ?? [{ dial: "", maxRequests: "" }];
-      setUpstreams(ups.length > 0 ? ups : [{ dial: "", maxRequests: "" }]);
-
-      // Parse LB
-      setLbPolicy(initialHandler.load_balancing?.selection_policy?.policy ?? "round_robin");
-      setTryDuration(initialHandler.load_balancing?.try_duration ?? "");
-      setRetries(
-        initialHandler.load_balancing?.retries ? String(initialHandler.load_balancing.retries) : "",
-      );
-
-      // Parse active health
-      const active = initialHandler.health_checks?.active;
-      setHealthEnabled(!!active);
-      setHealthUri(active?.uri ?? "/");
-      setHealthInterval(active?.interval ?? "30s");
-      setHealthTimeout(active?.timeout ?? "5s");
-
-      // Parse passive health
-      const passive = initialHandler.health_checks?.passive;
-      setPassiveEnabled(!!passive);
-      setMaxFails(passive?.max_fails ? String(passive.max_fails) : "3");
-      setFailDuration(passive?.fail_duration ?? "30s");
-
-      // Headers — check if X-Forwarded headers are explicitly deleted (disabled)
-      const deleteHeaders = initialHandler.headers?.request?.delete ?? [];
-      setDisableXForwarded(
-        deleteHeaders.includes("X-Forwarded-For") || deleteHeaders.includes("X-Forwarded-Proto"),
-      );
-
-      // Transport
-      setInsecureSkipVerify(initialHandler.transport?.tls?.insecure_skip_verify ?? false);
-    } else {
-      setUpstreams([{ dial: "localhost:3000", maxRequests: "" }]);
-      setLbPolicy("round_robin");
-      setTryDuration("");
-      setRetries("");
-      setHealthEnabled(false);
-      setHealthUri("/");
-      setHealthInterval("30s");
-      setHealthTimeout("5s");
-      setPassiveEnabled(false);
-      setMaxFails("3");
-      setFailDuration("30s");
-      setDisableXForwarded(false);
-      setInsecureSkipVerify(false);
-    }
-  }, [open, initialHandler]);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    const handler: ReverseProxyHandler = {
-      handler: "reverse_proxy",
-      upstreams: upstreams
-        .filter((u) => u.dial.trim())
-        .map((u) => ({
-          dial: u.dial.trim(),
-          ...(u.maxRequests ? { max_requests: Number.parseInt(u.maxRequests, 10) } : {}),
-        })),
-    };
-
-    // Load balancing
-    if (lbPolicy !== "round_robin" || tryDuration || retries) {
-      handler.load_balancing = {
-        selection_policy: { policy: lbPolicy },
-        ...(tryDuration ? { try_duration: tryDuration } : {}),
-        ...(retries ? { retries: Number.parseInt(retries, 10) } : {}),
-      };
-    }
-
-    // Health checks
-    if (healthEnabled || passiveEnabled) {
-      handler.health_checks = {};
-      if (healthEnabled) {
-        handler.health_checks.active = {
-          uri: healthUri,
-          interval: healthInterval,
-          timeout: healthTimeout,
-        };
-      }
-      if (passiveEnabled) {
-        handler.health_checks.passive = {
-          max_fails: Number.parseInt(maxFails, 10),
-          fail_duration: failDuration,
-        };
-      }
-    }
-
-    // Headers — tell Caddy to NOT add X-Forwarded-* when user wants them disabled
-    if (disableXForwarded) {
-      handler.headers = {
-        request: {
-          delete: ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host"],
-        },
-      };
-    }
-
-    // Transport
-    if (insecureSkipVerify) {
-      handler.transport = {
-        protocol: "http",
-        tls: { insecure_skip_verify: true },
-      };
-    }
-
-    onSubmit(handler);
+  function handleFormSubmit(values: ReverseProxyFormValues) {
+    onSubmit(toHandler(values));
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)} className="max-w-2xl">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Reverse Proxy Configuration</DialogTitle>
-            <DialogDescription>
-              Configure upstreams, load balancing, health checks, and more.
-            </DialogDescription>
-          </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+            <DialogHeader>
+              <DialogTitle>Reverse Proxy Configuration</DialogTitle>
+              <DialogDescription>
+                Configure upstreams, load balancing, health checks, and more.
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
-            {/* Upstreams */}
-            <section className="space-y-3">
-              <h4 className="text-sm font-semibold">Upstreams</h4>
-              {upstreams.map((upstream, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="host:port (e.g., localhost:3000)"
-                      value={upstream.dial}
-                      onChange={(e) => {
-                        const updated = [...upstreams];
-                        updated[idx] = { ...upstream, dial: e.target.value };
-                        setUpstreams(updated);
-                      }}
-                    />
+            <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
+              {/* Upstreams */}
+              <section className="space-y-3">
+                <h4 className="text-sm font-semibold">Upstreams</h4>
+                {fields.map((field, idx) => (
+                  <div key={field.id} className="flex gap-2">
+                    <div className="flex-1">
+                      <FormField
+                        control={form.control}
+                        name={`upstreams.${idx}.dial`}
+                        render={({ field: f }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input placeholder="host:port (e.g., localhost:3000)" {...f} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="w-32">
+                      <FormField
+                        control={form.control}
+                        name={`upstreams.${idx}.maxRequests`}
+                        render={({ field: f }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input placeholder="Max reqs" type="number" {...f} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(idx)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  <div className="w-32">
-                    <Input
-                      placeholder="Max reqs"
-                      type="number"
-                      value={upstream.maxRequests}
-                      onChange={(e) => {
-                        const updated = [...upstreams];
-                        updated[idx] = { ...upstream, maxRequests: e.target.value };
-                        setUpstreams(updated);
-                      }}
-                    />
-                  </div>
-                  {upstreams.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setUpstreams(upstreams.filter((_, i) => i !== idx))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append({ dial: "", maxRequests: "" })}
+                >
+                  <Plus className="h-3 w-3" />
+                  Add Upstream
+                </Button>
+              </section>
+
+              {/* Load Balancing */}
+              <section className="space-y-3">
+                <h4 className="text-sm font-semibold">Load Balancing</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="lbPolicy"
+                    render={({ field: f }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">Policy</FormLabel>
+                        <FormControl>
+                          <Select value={f.value} onChange={(e) => f.onChange(e.target.value)}>
+                            <option value="round_robin">Round Robin</option>
+                            <option value="random">Random</option>
+                            <option value="least_conn">Least Connections</option>
+                            <option value="ip_hash">IP Hash</option>
+                            <option value="uri_hash">URI Hash</option>
+                            <option value="first">First Available</option>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tryDuration"
+                    render={({ field: f }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">Try Duration</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., 5s" {...f} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="retries"
+                    render={({ field: f }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">Retries</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., 3" type="number" {...f} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </section>
+
+              {/* Active Health Checks */}
+              <section className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="healthEnabled"
+                  render={({ field: f }) => (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="health-enabled"
+                        checked={f.value}
+                        onChange={f.onChange}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <Label htmlFor="health-enabled" className="text-sm font-semibold">
+                        Active Health Checks
+                      </Label>
+                    </div>
                   )}
+                />
+                {healthEnabled && (
+                  <div className="grid grid-cols-3 gap-3 pl-6">
+                    <FormField
+                      control={form.control}
+                      name="healthUri"
+                      render={({ field: f }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">URI</FormLabel>
+                          <FormControl>
+                            <Input {...f} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="healthInterval"
+                      render={({ field: f }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">Interval</FormLabel>
+                          <FormControl>
+                            <Input {...f} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="healthTimeout"
+                      render={({ field: f }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">Timeout</FormLabel>
+                          <FormControl>
+                            <Input {...f} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </section>
+
+              {/* Passive Health Checks */}
+              <section className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="passiveEnabled"
+                  render={({ field: f }) => (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="passive-enabled"
+                        checked={f.value}
+                        onChange={f.onChange}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <Label htmlFor="passive-enabled" className="text-sm font-semibold">
+                        Passive Health Checks
+                      </Label>
+                    </div>
+                  )}
+                />
+                {passiveEnabled && (
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <FormField
+                      control={form.control}
+                      name="maxFails"
+                      render={({ field: f }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">Max Fails</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...f} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="failDuration"
+                      render={({ field: f }) => (
+                        <FormItem className="space-y-1">
+                          <FormLabel className="text-xs">Fail Duration</FormLabel>
+                          <FormControl>
+                            <Input {...f} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </section>
+
+              {/* Options */}
+              <section className="space-y-3">
+                <h4 className="text-sm font-semibold">Options</h4>
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="disableXForwarded"
+                    render={({ field: f }) => (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="disable-x-forwarded"
+                          checked={f.value}
+                          onChange={f.onChange}
+                          className="h-4 w-4 rounded border-input"
+                        />
+                        <Label htmlFor="disable-x-forwarded" className="font-normal">
+                          Disable X-Forwarded-For / X-Forwarded-Proto headers
+                        </Label>
+                      </div>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="insecureSkipVerify"
+                    render={({ field: f }) => (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="insecure-skip"
+                          checked={f.value}
+                          onChange={f.onChange}
+                          className="h-4 w-4 rounded border-input"
+                        />
+                        <Label htmlFor="insecure-skip" className="font-normal">
+                          Skip TLS verification (insecure - for self-signed backends)
+                        </Label>
+                      </div>
+                    )}
+                  />
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setUpstreams([...upstreams, { dial: "", maxRequests: "" }])}
-              >
-                <Plus className="h-3 w-3" />
-                Add Upstream
+              </section>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
               </Button>
-            </section>
-
-            {/* Load Balancing */}
-            <section className="space-y-3">
-              <h4 className="text-sm font-semibold">Load Balancing</h4>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Policy</Label>
-                  <Select value={lbPolicy} onChange={(e) => setLbPolicy(e.target.value)}>
-                    <option value="round_robin">Round Robin</option>
-                    <option value="random">Random</option>
-                    <option value="least_conn">Least Connections</option>
-                    <option value="ip_hash">IP Hash</option>
-                    <option value="uri_hash">URI Hash</option>
-                    <option value="first">First Available</option>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Try Duration</Label>
-                  <Input
-                    placeholder="e.g., 5s"
-                    value={tryDuration}
-                    onChange={(e) => setTryDuration(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Retries</Label>
-                  <Input
-                    placeholder="e.g., 3"
-                    type="number"
-                    value={retries}
-                    onChange={(e) => setRetries(e.target.value)}
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Active Health Checks */}
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="health-enabled"
-                  checked={healthEnabled}
-                  onChange={(e) => setHealthEnabled(e.target.checked)}
-                  className="h-4 w-4 rounded border-input"
-                />
-                <Label htmlFor="health-enabled" className="text-sm font-semibold">
-                  Active Health Checks
-                </Label>
-              </div>
-              {healthEnabled && (
-                <div className="grid grid-cols-3 gap-3 pl-6">
-                  <div className="space-y-1">
-                    <Label className="text-xs">URI</Label>
-                    <Input value={healthUri} onChange={(e) => setHealthUri(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Interval</Label>
-                    <Input
-                      value={healthInterval}
-                      onChange={(e) => setHealthInterval(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Timeout</Label>
-                    <Input
-                      value={healthTimeout}
-                      onChange={(e) => setHealthTimeout(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-            </section>
-
-            {/* Passive Health Checks */}
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="passive-enabled"
-                  checked={passiveEnabled}
-                  onChange={(e) => setPassiveEnabled(e.target.checked)}
-                  className="h-4 w-4 rounded border-input"
-                />
-                <Label htmlFor="passive-enabled" className="text-sm font-semibold">
-                  Passive Health Checks
-                </Label>
-              </div>
-              {passiveEnabled && (
-                <div className="grid grid-cols-2 gap-3 pl-6">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Max Fails</Label>
-                    <Input
-                      type="number"
-                      value={maxFails}
-                      onChange={(e) => setMaxFails(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Fail Duration</Label>
-                    <Input value={failDuration} onChange={(e) => setFailDuration(e.target.value)} />
-                  </div>
-                </div>
-              )}
-            </section>
-
-            {/* Options */}
-            <section className="space-y-3">
-              <h4 className="text-sm font-semibold">Options</h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="disable-x-forwarded"
-                    checked={disableXForwarded}
-                    onChange={(e) => setDisableXForwarded(e.target.checked)}
-                    className="h-4 w-4 rounded border-input"
-                  />
-                  <Label htmlFor="disable-x-forwarded" className="font-normal">
-                    Disable X-Forwarded-For / X-Forwarded-Proto headers
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="insecure-skip"
-                    checked={insecureSkipVerify}
-                    onChange={(e) => setInsecureSkipVerify(e.target.checked)}
-                    className="h-4 w-4 rounded border-input"
-                  />
-                  <Label htmlFor="insecure-skip" className="font-normal">
-                    Skip TLS verification (insecure - for self-signed backends)
-                  </Label>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </form>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

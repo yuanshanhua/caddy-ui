@@ -5,20 +5,22 @@
  */
 
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import {
+  headersFormSchema,
+  headersFormDefaults,
+  type HeadersFormValues,
+  type HeaderEntry,
+} from "@/lib/schemas/headers";
 import type { HeaderOps, HeadersHandler, RespHeaderOps } from "@/types/handlers";
-
-interface HeaderEntry {
-  id: string;
-  operation: "add" | "set" | "delete";
-  name: string;
-  value: string;
-}
 
 interface HeadersFormProps {
   value?: HeadersHandler;
@@ -86,207 +88,284 @@ function buildHeaderOps(entries: HeaderEntry[]): HeaderOps | undefined {
   return hasOps ? ops : undefined;
 }
 
+function parseInitialValues(handler: HeadersHandler | undefined): HeadersFormValues {
+  if (!handler) return headersFormDefaults;
+  return {
+    requestHeaders: parseHeaderOps(handler.request),
+    responseHeaders: parseHeaderOps(handler.response),
+    responseDeferred: handler.response?.deferred ?? false,
+  };
+}
+
+function toHandler(values: HeadersFormValues): HeadersHandler {
+  const handler: HeadersHandler = { handler: "headers" };
+
+  const requestOps = buildHeaderOps(values.requestHeaders);
+  if (requestOps) handler.request = requestOps;
+
+  const responseOps = buildHeaderOps(values.responseHeaders);
+  if (responseOps) {
+    const respOps: RespHeaderOps = { ...responseOps };
+    if (values.responseDeferred) respOps.deferred = true;
+    handler.response = respOps;
+  }
+
+  return handler;
+}
+
 export function HeadersForm({ value, onChange }: HeadersFormProps) {
   const { t } = useTranslation("middleware");
   const { t: tc } = useTranslation();
-  const [requestHeaders, setRequestHeaders] = useState<HeaderEntry[]>([]);
-  const [responseHeaders, setResponseHeaders] = useState<HeaderEntry[]>([]);
-  const [responseDeferred, setResponseDeferred] = useState(false);
 
+  const form = useForm<HeadersFormValues>({
+    resolver: zodResolver(headersFormSchema),
+    defaultValues: parseInitialValues(value),
+  });
+
+  const requestFields = useFieldArray({ control: form.control, name: "requestHeaders" });
+  const responseFields = useFieldArray({ control: form.control, name: "responseHeaders" });
+
+  // Sync external value changes
   useEffect(() => {
     if (value) {
-      setRequestHeaders(parseHeaderOps(value.request));
-      setResponseHeaders(parseHeaderOps(value.response));
-      setResponseDeferred(value.response?.deferred ?? false);
+      form.reset(parseInitialValues(value));
     }
-  }, [value]);
+  }, [value, form]);
 
-  function emitChange(reqHeaders: HeaderEntry[], respHeaders: HeaderEntry[], deferred: boolean) {
-    const handler: HeadersHandler = {
-      handler: "headers",
-    };
-
-    const requestOps = buildHeaderOps(reqHeaders);
-    if (requestOps) handler.request = requestOps;
-
-    const responseOps = buildHeaderOps(respHeaders);
-    if (responseOps) {
-      const respOps: RespHeaderOps = { ...responseOps };
-      if (deferred) respOps.deferred = true;
-      handler.response = respOps;
-    }
-
-    onChange(handler);
-  }
-
-  function addRequestHeader() {
-    const updated = [
-      ...requestHeaders,
-      { id: generateId(), operation: "set" as const, name: "", value: "" },
-    ];
-    setRequestHeaders(updated);
-  }
-
-  function addResponseHeader() {
-    const updated = [
-      ...responseHeaders,
-      { id: generateId(), operation: "set" as const, name: "", value: "" },
-    ];
-    setResponseHeaders(updated);
-  }
-
-  function updateRequestHeader(id: string, field: keyof HeaderEntry, val: string) {
-    const updated = requestHeaders.map((h) => (h.id === id ? { ...h, [field]: val } : h));
-    setRequestHeaders(updated);
-    emitChange(updated, responseHeaders, responseDeferred);
-  }
-
-  function removeRequestHeader(id: string) {
-    const updated = requestHeaders.filter((h) => h.id !== id);
-    setRequestHeaders(updated);
-    emitChange(updated, responseHeaders, responseDeferred);
-  }
-
-  function updateResponseHeader(id: string, field: keyof HeaderEntry, val: string) {
-    const updated = responseHeaders.map((h) => (h.id === id ? { ...h, [field]: val } : h));
-    setResponseHeaders(updated);
-    emitChange(requestHeaders, updated, responseDeferred);
-  }
-
-  function removeResponseHeader(id: string) {
-    const updated = responseHeaders.filter((h) => h.id !== id);
-    setResponseHeaders(updated);
-    emitChange(requestHeaders, updated, responseDeferred);
-  }
-
-  function toggleDeferred(checked: boolean) {
-    setResponseDeferred(checked);
-    emitChange(requestHeaders, responseHeaders, checked);
+  // Emit changes on form value update
+  function emitChange() {
+    const values = form.getValues();
+    onChange(toHandler(values));
   }
 
   return (
-    <div className="space-y-5">
-      {/* Request Headers */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold">{t("headers.requestHeaders")}</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addRequestHeader}>
-            <Plus className="h-3 w-3" />
-            {tc("actions.add")}
-          </Button>
-        </div>
-        {requestHeaders.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            {t("headers.noModifications", { type: "request" })}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {requestHeaders.map((entry) => (
-              <div key={entry.id} className="flex gap-2 items-center">
-                <Select
-                  className="w-24 shrink-0"
-                  value={entry.operation}
-                  onChange={(e) => updateRequestHeader(entry.id, "operation", e.target.value)}
-                >
-                  <option value="set">{t("headers.set")}</option>
-                  <option value="add">{t("headers.add")}</option>
-                  <option value="delete">{t("headers.delete")}</option>
-                </Select>
-                <Input
-                  placeholder={t("headers.headerName")}
-                  className="flex-1"
-                  value={entry.name}
-                  onChange={(e) => updateRequestHeader(entry.id, "name", e.target.value)}
-                />
-                {entry.operation !== "delete" && (
-                  <Input
-                    placeholder={t("headers.value")}
-                    className="flex-1"
-                    value={entry.value}
-                    onChange={(e) => updateRequestHeader(entry.id, "value", e.target.value)}
-                  />
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => removeRequestHeader(entry.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
+    <Form {...form}>
+      <div className="space-y-5">
+        {/* Request Headers */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-semibold">{t("headers.requestHeaders")}</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                requestFields.append({ id: generateId(), operation: "set", name: "", value: "" });
+              }}
+            >
+              <Plus className="h-3 w-3" />
+              {tc("actions.add")}
+            </Button>
           </div>
-        )}
-      </section>
+          {requestFields.fields.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t("headers.noModifications", { type: "request" })}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {requestFields.fields.map((field, idx) => (
+                <div key={field.id} className="flex gap-2 items-center">
+                  <FormField
+                    control={form.control}
+                    name={`requestHeaders.${idx}.operation`}
+                    render={({ field: f }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Select
+                            className="w-24 shrink-0"
+                            value={f.value}
+                            onChange={(e) => {
+                              f.onChange(e.target.value);
+                              emitChange();
+                            }}
+                          >
+                            <option value="set">{t("headers.set")}</option>
+                            <option value="add">{t("headers.add")}</option>
+                            <option value="delete">{t("headers.delete")}</option>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`requestHeaders.${idx}.name`}
+                    render={({ field: f }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input
+                            placeholder={t("headers.headerName")}
+                            {...f}
+                            onChange={(e) => {
+                              f.onChange(e);
+                              emitChange();
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  {form.watch(`requestHeaders.${idx}.operation`) !== "delete" && (
+                    <FormField
+                      control={form.control}
+                      name={`requestHeaders.${idx}.value`}
+                      render={({ field: f }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input
+                              placeholder={t("headers.value")}
+                              {...f}
+                              onChange={(e) => {
+                                f.onChange(e);
+                                emitChange();
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => {
+                      requestFields.remove(idx);
+                      emitChange();
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* Response Headers */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold">{t("headers.responseHeaders")}</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addResponseHeader}>
-            <Plus className="h-3 w-3" />
-            {tc("actions.add")}
-          </Button>
-        </div>
-        {responseHeaders.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            {t("headers.noModifications", { type: "response" })}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {responseHeaders.map((entry) => (
-              <div key={entry.id} className="flex gap-2 items-center">
-                <Select
-                  className="w-24 shrink-0"
-                  value={entry.operation}
-                  onChange={(e) => updateResponseHeader(entry.id, "operation", e.target.value)}
-                >
-                  <option value="set">{t("headers.set")}</option>
-                  <option value="add">{t("headers.add")}</option>
-                  <option value="delete">{t("headers.delete")}</option>
-                </Select>
-                <Input
-                  placeholder={t("headers.headerName")}
-                  className="flex-1"
-                  value={entry.name}
-                  onChange={(e) => updateResponseHeader(entry.id, "name", e.target.value)}
-                />
-                {entry.operation !== "delete" && (
-                  <Input
-                    placeholder={t("headers.value")}
-                    className="flex-1"
-                    value={entry.value}
-                    onChange={(e) => updateResponseHeader(entry.id, "value", e.target.value)}
-                  />
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => removeResponseHeader(entry.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
+        {/* Response Headers */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-semibold">{t("headers.responseHeaders")}</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                responseFields.append({ id: generateId(), operation: "set", name: "", value: "" });
+              }}
+            >
+              <Plus className="h-3 w-3" />
+              {tc("actions.add")}
+            </Button>
           </div>
-        )}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="resp-deferred"
-            checked={responseDeferred}
-            onChange={(e) => toggleDeferred(e.target.checked)}
-            className="h-4 w-4 rounded border-input"
+          {responseFields.fields.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t("headers.noModifications", { type: "response" })}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {responseFields.fields.map((field, idx) => (
+                <div key={field.id} className="flex gap-2 items-center">
+                  <FormField
+                    control={form.control}
+                    name={`responseHeaders.${idx}.operation`}
+                    render={({ field: f }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Select
+                            className="w-24 shrink-0"
+                            value={f.value}
+                            onChange={(e) => {
+                              f.onChange(e.target.value);
+                              emitChange();
+                            }}
+                          >
+                            <option value="set">{t("headers.set")}</option>
+                            <option value="add">{t("headers.add")}</option>
+                            <option value="delete">{t("headers.delete")}</option>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`responseHeaders.${idx}.name`}
+                    render={({ field: f }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input
+                            placeholder={t("headers.headerName")}
+                            {...f}
+                            onChange={(e) => {
+                              f.onChange(e);
+                              emitChange();
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  {form.watch(`responseHeaders.${idx}.operation`) !== "delete" && (
+                    <FormField
+                      control={form.control}
+                      name={`responseHeaders.${idx}.value`}
+                      render={({ field: f }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input
+                              placeholder={t("headers.value")}
+                              {...f}
+                              onChange={(e) => {
+                                f.onChange(e);
+                                emitChange();
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => {
+                      responseFields.remove(idx);
+                      emitChange();
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <FormField
+            control={form.control}
+            name="responseDeferred"
+            render={({ field: f }) => (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="resp-deferred"
+                  checked={f.value}
+                  onChange={(e) => {
+                    f.onChange(e.target.checked);
+                    emitChange();
+                  }}
+                  className="h-4 w-4 rounded border-input"
+                />
+                <Label htmlFor="resp-deferred" className="font-normal text-xs">
+                  {t("headers.deferred")}
+                </Label>
+              </div>
+            )}
           />
-          <Label htmlFor="resp-deferred" className="font-normal text-xs">
-            {t("headers.deferred")}
-          </Label>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </Form>
   );
 }

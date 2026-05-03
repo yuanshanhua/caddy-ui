@@ -4,10 +4,14 @@
  * Configures gzip/zstd compression with minimum length and content-type preferences.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { encodeFormSchema, encodeFormDefaults, type EncodeFormValues } from "@/lib/schemas/middleware";
 import type { EncodeHandler } from "@/types/handlers";
 
 interface EncodeFormProps {
@@ -15,146 +19,181 @@ interface EncodeFormProps {
   onChange: (handler: EncodeHandler) => void;
 }
 
+function parseInitialValues(handler: EncodeHandler | undefined): EncodeFormValues {
+  if (!handler) return encodeFormDefaults;
+  const encodings = handler.encodings ?? {};
+  return {
+    gzipEnabled: Object.hasOwn(encodings, "gzip"),
+    zstdEnabled: Object.hasOwn(encodings, "zstd"),
+    minLength: handler.minimum_length ? String(handler.minimum_length) : "256",
+    prefer: handler.prefer ?? ["zstd", "gzip"],
+  };
+}
+
+function toHandler(values: EncodeFormValues): EncodeHandler {
+  const encodings: Record<string, Record<string, unknown>> = {};
+  if (values.gzipEnabled) encodings["gzip"] = {};
+  if (values.zstdEnabled) encodings["zstd"] = {};
+
+  const handler: EncodeHandler = {
+    handler: "encode",
+    encodings,
+    prefer: values.prefer.filter(
+      (p) => (p === "gzip" && values.gzipEnabled) || (p === "zstd" && values.zstdEnabled),
+    ),
+  };
+
+  const minVal = Number.parseInt(values.minLength, 10);
+  if (!Number.isNaN(minVal) && minVal > 0) {
+    handler.minimum_length = minVal;
+  }
+
+  return handler;
+}
+
 export function EncodeForm({ value, onChange }: EncodeFormProps) {
   const { t } = useTranslation("middleware");
-  const [gzipEnabled, setGzipEnabled] = useState(true);
-  const [zstdEnabled, setZstdEnabled] = useState(true);
-  const [minLength, setMinLength] = useState("256");
-  const [prefer, setPrefer] = useState<string[]>(["zstd", "gzip"]);
+
+  const form = useForm<EncodeFormValues>({
+    resolver: zodResolver(encodeFormSchema),
+    defaultValues: parseInitialValues(value),
+  });
 
   useEffect(() => {
-    if (value) {
-      const encodings = value.encodings ?? {};
-      setGzipEnabled(Object.hasOwn(encodings, "gzip"));
-      setZstdEnabled(Object.hasOwn(encodings, "zstd"));
-      setMinLength(value.minimum_length ? String(value.minimum_length) : "256");
-      setPrefer(value.prefer ?? ["zstd", "gzip"]);
-    }
-  }, [value]);
+    form.reset(parseInitialValues(value));
+  }, [value, form]);
 
-  function emitChange(gzip: boolean, zstd: boolean, min: string, pref: string[]) {
-    const encodings: Record<string, Record<string, unknown>> = {};
-    if (gzip) encodings["gzip"] = {};
-    if (zstd) encodings["zstd"] = {};
+  const gzipEnabled = form.watch("gzipEnabled");
+  const zstdEnabled = form.watch("zstdEnabled");
+  const prefer = form.watch("prefer");
 
-    const handler: EncodeHandler = {
-      handler: "encode",
-      encodings,
-      prefer: pref.filter((p) => (p === "gzip" && gzip) || (p === "zstd" && zstd)),
-    };
-
-    const minVal = Number.parseInt(min, 10);
-    if (!Number.isNaN(minVal) && minVal > 0) {
-      handler.minimum_length = minVal;
-    }
-
-    onChange(handler);
-  }
-
-  function handleGzipChange(checked: boolean) {
-    setGzipEnabled(checked);
-    emitChange(checked, zstdEnabled, minLength, prefer);
-  }
-
-  function handleZstdChange(checked: boolean) {
-    setZstdEnabled(checked);
-    emitChange(gzipEnabled, checked, minLength, prefer);
-  }
-
-  function handleMinLengthChange(val: string) {
-    setMinLength(val);
-    emitChange(gzipEnabled, zstdEnabled, val, prefer);
-  }
-
-  function handlePreferChange(first: string) {
-    const newPrefer = first === "zstd" ? ["zstd", "gzip"] : ["gzip", "zstd"];
-    setPrefer(newPrefer);
-    emitChange(gzipEnabled, zstdEnabled, minLength, newPrefer);
+  function emitChange() {
+    const values = form.getValues();
+    onChange(toHandler(values));
   }
 
   return (
-    <div className="space-y-4">
-      {/* Encoding algorithms */}
-      <section className="space-y-3">
-        <Label className="text-sm font-semibold">{t("encode.encodings")}</Label>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="encode-gzip"
-              checked={gzipEnabled}
-              onChange={(e) => handleGzipChange(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
+    <Form {...form}>
+      <div className="space-y-4">
+        {/* Encoding algorithms */}
+        <section className="space-y-3">
+          <Label className="text-sm font-semibold">{t("encode.encodings")}</Label>
+          <div className="space-y-2">
+            <FormField
+              control={form.control}
+              name="gzipEnabled"
+              render={({ field }) => (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="encode-gzip"
+                    checked={field.value}
+                    onChange={(e) => {
+                      field.onChange(e.target.checked);
+                      emitChange();
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <Label htmlFor="encode-gzip" className="font-normal">
+                    {t("encode.gzip")}
+                  </Label>
+                  <span className="text-xs text-muted-foreground">{t("encode.gzipHint")}</span>
+                </div>
+              )}
             />
-            <Label htmlFor="encode-gzip" className="font-normal">
-              {t("encode.gzip")}
-            </Label>
-            <span className="text-xs text-muted-foreground">{t("encode.gzipHint")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="encode-zstd"
-              checked={zstdEnabled}
-              onChange={(e) => handleZstdChange(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
+            <FormField
+              control={form.control}
+              name="zstdEnabled"
+              render={({ field }) => (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="encode-zstd"
+                    checked={field.value}
+                    onChange={(e) => {
+                      field.onChange(e.target.checked);
+                      emitChange();
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <Label htmlFor="encode-zstd" className="font-normal">
+                    {t("encode.zstd")}
+                  </Label>
+                  <span className="text-xs text-muted-foreground">{t("encode.zstdHint")}</span>
+                </div>
+              )}
             />
-            <Label htmlFor="encode-zstd" className="font-normal">
-              {t("encode.zstd")}
-            </Label>
-            <span className="text-xs text-muted-foreground">{t("encode.zstdHint")}</span>
           </div>
-        </div>
-      </section>
-
-      {/* Preference order */}
-      {gzipEnabled && zstdEnabled && (
-        <section className="space-y-2">
-          <Label className="text-sm font-semibold">{t("encode.preferred")}</Label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="encode-prefer"
-                value="zstd"
-                checked={prefer[0] === "zstd"}
-                onChange={() => handlePreferChange("zstd")}
-                className="h-4 w-4"
-              />
-              <span className="text-sm">{t("encode.zstdFirst")}</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="encode-prefer"
-                value="gzip"
-                checked={prefer[0] === "gzip"}
-                onChange={() => handlePreferChange("gzip")}
-                className="h-4 w-4"
-              />
-              <span className="text-sm">{t("encode.gzipFirst")}</span>
-            </label>
-          </div>
-          <p className="text-xs text-muted-foreground">{t("encode.preferredHint")}</p>
         </section>
-      )}
 
-      {/* Minimum length */}
-      <section className="space-y-2">
-        <Label htmlFor="encode-min-length" className="text-sm font-semibold">
-          {t("encode.minLength")}
-        </Label>
-        <Input
-          id="encode-min-length"
-          type="number"
-          min="0"
-          placeholder="256"
-          value={minLength}
-          onChange={(e) => handleMinLengthChange(e.target.value)}
-          className="w-32"
-        />
-        <p className="text-xs text-muted-foreground">{t("encode.minLengthHint")}</p>
-      </section>
-    </div>
+        {/* Preference order */}
+        {gzipEnabled && zstdEnabled && (
+          <section className="space-y-2">
+            <Label className="text-sm font-semibold">{t("encode.preferred")}</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="encode-prefer"
+                  value="zstd"
+                  checked={prefer[0] === "zstd"}
+                  onChange={() => {
+                    form.setValue("prefer", ["zstd", "gzip"]);
+                    emitChange();
+                  }}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">{t("encode.zstdFirst")}</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="encode-prefer"
+                  value="gzip"
+                  checked={prefer[0] === "gzip"}
+                  onChange={() => {
+                    form.setValue("prefer", ["gzip", "zstd"]);
+                    emitChange();
+                  }}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">{t("encode.gzipFirst")}</span>
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("encode.preferredHint")}</p>
+          </section>
+        )}
+
+        {/* Minimum length */}
+        <section className="space-y-2">
+          <Label htmlFor="encode-min-length" className="text-sm font-semibold">
+            {t("encode.minLength")}
+          </Label>
+          <FormField
+            control={form.control}
+            name="minLength"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    id="encode-min-length"
+                    type="number"
+                    min="0"
+                    placeholder="256"
+                    className="w-32"
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      emitChange();
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <p className="text-xs text-muted-foreground">{t("encode.minLengthHint")}</p>
+        </section>
+      </div>
+    </Form>
   );
 }

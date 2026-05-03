@@ -43,8 +43,100 @@ Caddy UI is a pure static SPA for managing Caddy web server via its Admin API. I
 ### State Management
 - **Server state**: Always use TanStack Query. Never store API data in Zustand.
 - **UI state**: Zustand only for client preferences (sidebar, theme).
-- **Form state**: React Hook Form + Zod validation.
+- **Form state**: React Hook Form + Zod validation (see Form Patterns below).
 - **URL state**: React Router for navigation state.
+
+### Form Patterns
+
+All forms use **React Hook Form** with **Zod schemas** for validation. Never use raw `useState` for form fields.
+
+#### Schema Location
+Schemas live in `src/lib/schemas/`. Each schema file exports:
+- A Zod schema (e.g., `reverseProxyFormSchema`)
+- An inferred TypeScript type (e.g., `type ReverseProxyFormValues`)
+- Default values constant (e.g., `reverseProxyDefaults`)
+
+```
+src/lib/schemas/
+├── common.ts          # Shared validators (duration, address, etc.)
+├── reverse-proxy.ts   # Reverse proxy form schema
+├── headers.ts         # Headers handler schema
+├── server.ts          # Server form schema
+├── tls-policy.ts      # TLS policy schema
+├── log.ts             # Log config schema
+├── middleware.ts      # CORS, Encode, Rewrite, BasicAuth, Matchers
+├── route.ts           # Route form schema
+└── index.ts           # Barrel export
+```
+
+#### Form Component Pattern (Dialog forms)
+```tsx
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { mySchema, myDefaults, type MyFormValues } from "@/lib/schemas/my-schema";
+
+function MyFormDialog({ open, initialData, onSubmit }) {
+  const form = useForm<MyFormValues>({
+    resolver: zodResolver(mySchema),
+    defaultValues: initialData ? parseInitial(initialData) : myDefaults,
+    values: open ? (initialData ? parseInitial(initialData) : myDefaults) : undefined,
+  });
+
+  function handleFormSubmit(values: MyFormValues) {
+    onSubmit(toApiPayload(values));
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+        <FormField control={form.control} name="fieldName" render={({ field }) => (
+          <FormItem>
+            <FormControl><Input {...field} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </form>
+    </Form>
+  );
+}
+```
+
+#### Form Component Pattern (Inline/onChange forms)
+For forms that emit changes in real-time (no submit button):
+```tsx
+function MyInlineForm({ value, onChange }) {
+  const form = useForm<MyFormValues>({
+    resolver: zodResolver(mySchema),
+    defaultValues: parseInitial(value),
+  });
+
+  useEffect(() => { form.reset(parseInitial(value)); }, [value, form]);
+
+  function emitChange() {
+    onChange(toApiPayload(form.getValues()));
+  }
+
+  // In each field's onChange: call field.onChange(e) then emitChange()
+}
+```
+
+#### Dynamic Arrays
+Use `useFieldArray` for add/remove/reorder patterns:
+```tsx
+const { fields, append, remove } = useFieldArray({
+  control: form.control,
+  name: "items",
+});
+```
+
+#### Key Rules
+- **One `useForm` per form** — replace multiple `useState` calls
+- **Transform at boundaries** — `parseInitialValues()` converts API → form shape, `toHandler()` converts form → API shape
+- **Schema = single source of truth** — types are inferred via `z.infer<typeof schema>`
+- **`values` prop for dialog reset** — pass `values` to `useForm` so form resets when dialog opens
+- **Shared validators** — reuse `durationSchema`, `addressSchema`, etc. from `src/lib/schemas/common.ts`
+- **Sub-forms own their state** — inline forms (headers, encode, etc.) have their own RHF instance and emit via `onChange`
 
 ### API Layer
 - All API calls go through `src/api/client.ts` → typed `request<T>()` function
