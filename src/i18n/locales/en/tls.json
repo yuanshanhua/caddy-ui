@@ -1,0 +1,16 @@
+{
+  "title": "TLS / Certificates",
+  "subtitle": "Manage TLS certificates and automation policies.",
+  "loadingSubtitle": "Loading TLS configuration...",
+  "loadError": "Failed to load TLS configuration: {{message}}",
+  "noConfig": {
+    "title": "No TLS Configuration",
+    "description": "Caddy automatically manages HTTPS for domains configured in your HTTP servers. Add an automation policy to customize certificate issuance behavior."
+  },
+  "certificates": {
+    "title": "Certificates"
+  },
+  "policies": {
+    "title": "Automation Policies"
+  }
+}

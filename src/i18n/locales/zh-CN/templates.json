@@ -1,0 +1,55 @@
+{
+  "title": "模板",
+  "subtitle": "常用配置模式。预览并应用到任意服务器。",
+  "category": {
+    "web": "Web",
+    "api": "API",
+    "proxy": "代理"
+  },
+  "routeCount": "{{count}} 条路由",
+  "routeCountPlural": "{{count}} 条路由",
+  "applied": "已应用",
+  "applyTemplate": "应用",
+  "noServers": "未配置 HTTP 服务器。请先创建一个服务器再应用模板。",
+  "preview": {
+    "title": "{{name}}",
+    "subtitle": "JSON 配置预览"
+  },
+  "confirm": {
+    "title": "应用 \"{{name}}\"",
+    "selectServer": "选择一个服务器以应用 {{count}} 条路由：",
+    "description": "这将向服务器 \"{{server}}\" 添加 {{count}} 条路由。之后可以编辑或删除。",
+    "confirm": "应用模板",
+    "targetServer": "目标服务器",
+    "selectPlaceholder": "选择一个服务器..."
+  },
+  "success": "模板 \"{{name}}\" 已应用",
+  "successDescription": "已向 {{server}} 添加 {{count}} 条路由",
+  "error": "模板应用失败",
+  "templates": {
+    "spa": {
+      "name": "单页应用 (SPA)",
+      "description": "提供静态文件服务，支持 HTML5 History 模式回退。所有非文件路径返回 index.html。"
+    },
+    "wordpress": {
+      "name": "WordPress / PHP-FPM",
+      "description": "反向代理到 PHP-FPM 后端，为静态资源提供文件服务。包含常见安全头。"
+    },
+    "apiGateway": {
+      "name": "API 网关",
+      "description": "按路径前缀将 API 请求路由到不同后端。包含 CORS 头、压缩和速率限制路径。"
+    },
+    "loadBalanced": {
+      "name": "负载均衡反向代理",
+      "description": "将所有流量代理到多个后端，支持健康检查和轮询负载均衡。"
+    },
+    "static": {
+      "name": "静态文件服务器",
+      "description": "提供静态文件服务，支持压缩、目录浏览和适当的缓存头。"
+    },
+    "wwwRedirect": {
+      "name": "WWW 重定向",
+      "description": "将所有 www.example.com 流量重定向到 example.com（或反过来）。"
+    }
+  }
+}

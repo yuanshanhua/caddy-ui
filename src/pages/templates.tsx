@@ -7,6 +7,7 @@
 
 import { Check, Copy, FileCode2, Globe, Network, Server } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -31,17 +32,20 @@ function CategoryIcon({ category }: { category: ConfigTemplate["category"] }) {
 }
 
 function CategoryBadge({ category }: { category: ConfigTemplate["category"] }) {
+  const { t } = useTranslation("templates");
   switch (category) {
     case "web":
-      return <Badge variant="outline">Web</Badge>;
+      return <Badge variant="outline">{t("category.web")}</Badge>;
     case "api":
-      return <Badge variant="outline">API</Badge>;
+      return <Badge variant="outline">{t("category.api")}</Badge>;
     case "proxy":
-      return <Badge variant="outline">Proxy</Badge>;
+      return <Badge variant="outline">{t("category.proxy")}</Badge>;
   }
 }
 
 export function TemplatesPage() {
+  const { t } = useTranslation("templates");
+  const { t: tc } = useTranslation();
   const { data: config } = useConfig();
   const addRoute = useAddRoute();
 
@@ -71,20 +75,22 @@ export function TemplatesPage() {
     if (!selectedTemplate || !targetServer) return;
 
     try {
-      // Add each route from the template to the target server
       for (const route of selectedTemplate.routes) {
         await addRoute.mutateAsync({ serverId: targetServer, route });
       }
 
-      toast.success(`Template "${selectedTemplate.name}" applied`, {
-        description: `${selectedTemplate.routes.length} route(s) added to ${targetServer}`,
+      toast.success(t("success", { name: selectedTemplate.name }), {
+        description: t("successDescription", {
+          count: selectedTemplate.routes.length,
+          server: targetServer,
+        }),
       });
       setAppliedId(selectedTemplate.id);
       setShowConfirm(false);
       setTimeout(() => setAppliedId(null), 3000);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Failed to apply template", { description: message });
+      toast.error(t("error"), { description: message });
     }
   }
 
@@ -92,10 +98,8 @@ export function TemplatesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
-        <p className="text-muted-foreground">
-          Common configuration patterns. Preview and apply to any server.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       {/* Template Grid */}
@@ -115,12 +119,14 @@ export function TemplatesPage() {
             <CardContent className="mt-auto pt-0">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">
-                  {template.routes.length} route{template.routes.length !== 1 ? "s" : ""}
+                  {template.routes.length === 1
+                    ? t("routeCount", { count: 1 })
+                    : t("routeCountPlural", { count: template.routes.length })}
                 </span>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="sm" onClick={() => handlePreview(template)}>
                     <FileCode2 className="h-3 w-3" />
-                    Preview
+                    {tc("actions.preview")}
                   </Button>
                   <Button
                     variant="outline"
@@ -131,12 +137,12 @@ export function TemplatesPage() {
                     {appliedId === template.id ? (
                       <>
                         <Check className="h-3 w-3" />
-                        Applied
+                        {t("applied")}
                       </>
                     ) : (
                       <>
                         <Copy className="h-3 w-3" />
-                        Apply
+                        {t("applyTemplate")}
                       </>
                     )}
                   </Button>
@@ -150,9 +156,7 @@ export function TemplatesPage() {
       {serverIds.length === 0 && (
         <Card className="border-amber-500/50">
           <CardContent className="pt-6">
-            <p className="text-sm text-amber-600 dark:text-amber-400">
-              No HTTP servers configured. Create a server first before applying templates.
-            </p>
+            <p className="text-sm text-amber-600 dark:text-amber-400">{t("noServers")}</p>
           </CardContent>
         </Card>
       )}
@@ -174,10 +178,10 @@ export function TemplatesPage() {
             <div className="p-4 border-b flex items-center justify-between">
               <div>
                 <h3 className="font-semibold">{selectedTemplate.name}</h3>
-                <p className="text-xs text-muted-foreground">JSON config preview</p>
+                <p className="text-xs text-muted-foreground">{t("preview.subtitle")}</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>
-                Close
+                {tc("actions.close")}
               </Button>
             </div>
             <div className="p-4 overflow-auto flex-1">
@@ -194,25 +198,28 @@ export function TemplatesPage() {
         <ConfirmDialog
           open={showConfirm}
           onOpenChange={setShowConfirm}
-          title={`Apply "${selectedTemplate.name}"`}
+          title={t("confirm.title", { name: selectedTemplate.name })}
           description={
             serverIds.length > 1
-              ? `Select a server to apply ${selectedTemplate.routes.length} route(s) to:`
-              : `This will add ${selectedTemplate.routes.length} route(s) to server "${targetServer}". You can edit or remove them later.`
+              ? t("confirm.selectServer", { count: selectedTemplate.routes.length })
+              : t("confirm.description", {
+                  count: selectedTemplate.routes.length,
+                  server: targetServer,
+                })
           }
-          confirmLabel="Apply Template"
+          confirmLabel={t("confirm.confirm")}
           onConfirm={handleApply}
           loading={addRoute.isPending}
         >
           {serverIds.length > 1 && (
             <div className="space-y-2 py-2">
-              <Label htmlFor="target-server">Target Server</Label>
+              <Label htmlFor="target-server">{t("confirm.targetServer")}</Label>
               <Select
                 id="target-server"
                 value={targetServer}
                 onChange={(e) => setTargetServer(e.target.value)}
               >
-                <option value="">Select a server...</option>
+                <option value="">{t("confirm.selectPlaceholder")}</option>
                 {serverIds.map((id) => (
                   <option key={id} value={id}>
                     {id}

@@ -1,0 +1,48 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "apply": "Apply",
+    "create": "Create",
+    "edit": "Edit",
+    "close": "Close",
+    "add": "Add",
+    "remove": "Remove",
+    "reset": "Reset",
+    "copy": "Copy",
+    "preview": "Preview",
+    "back": "Back"
+  },
+  "status": {
+    "loading": "Loading...",
+    "error": "Error",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "checking": "Checking...",
+    "saving": "Saving...",
+    "applying": "Applying..."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "sites": "Sites",
+    "import": "Import",
+    "upstreams": "Upstreams",
+    "tls": "TLS / Certs",
+    "logging": "Logging",
+    "templates": "Templates",
+    "globalConfig": "Global Config",
+    "rawConfig": "Raw Config"
+  },
+  "errors": {
+    "loadFailed": "Failed to load: {{message}}",
+    "saveFailed": "Failed to save: {{message}}",
+    "unexpected": "An unexpected error occurred"
+  },
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文"
+  },
+  "brand": "Caddy UI"
+}

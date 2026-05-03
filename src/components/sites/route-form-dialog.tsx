@@ -10,6 +10,7 @@
 
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AdvancedMatchersForm } from "@/components/middleware/advanced-matchers-form";
 import { BasicAuthForm } from "@/components/middleware/basic-auth-form";
 import { CorsForm } from "@/components/middleware/cors-form";
@@ -50,21 +51,6 @@ type HandlerType = "reverse_proxy" | "file_server" | "static_response" | "redir"
 
 type MiddlewareType = "headers" | "encode" | "rewrite" | "authentication" | "cors";
 
-const HANDLER_OPTIONS: Array<{ value: HandlerType; label: string }> = [
-  { value: "reverse_proxy", label: "Reverse Proxy" },
-  { value: "file_server", label: "File Server" },
-  { value: "static_response", label: "Static Response" },
-  { value: "redir", label: "Redirect" },
-];
-
-const MIDDLEWARE_OPTIONS: Array<{ value: MiddlewareType; label: string; description: string }> = [
-  { value: "headers", label: "Headers", description: "Modify request/response headers" },
-  { value: "encode", label: "Compression", description: "gzip/zstd response encoding" },
-  { value: "rewrite", label: "URI Rewrite", description: "Rewrite request URI" },
-  { value: "authentication", label: "Basic Auth", description: "HTTP basic authentication" },
-  { value: "cors", label: "CORS", description: "Cross-origin resource sharing" },
-];
-
 export function RouteFormDialog({
   open,
   onOpenChange,
@@ -72,7 +58,40 @@ export function RouteFormDialog({
   loading = false,
   initialRoute,
 }: RouteFormDialogProps) {
+  const { t } = useTranslation("middleware");
+  const { t: tc } = useTranslation();
   const isEdit = !!initialRoute;
+
+  const HANDLER_OPTIONS: Array<{ value: HandlerType; label: string }> = [
+    { value: "reverse_proxy", label: t("routeForm.handlerReverseProxy") },
+    { value: "file_server", label: t("routeForm.handlerFileServer") },
+    { value: "static_response", label: t("routeForm.handlerStaticResponse") },
+    { value: "redir", label: t("routeForm.handlerRedirect") },
+  ];
+
+  const MIDDLEWARE_OPTIONS: Array<{ value: MiddlewareType; label: string; description: string }> = [
+    {
+      value: "headers",
+      label: t("routeForm.mwHeaders"),
+      description: t("routeForm.mwHeadersHint"),
+    },
+    {
+      value: "encode",
+      label: t("routeForm.mwCompression"),
+      description: t("routeForm.mwCompressionHint"),
+    },
+    {
+      value: "rewrite",
+      label: t("routeForm.mwRewrite"),
+      description: t("routeForm.mwRewriteHint"),
+    },
+    {
+      value: "authentication",
+      label: t("routeForm.mwBasicAuth"),
+      description: t("routeForm.mwBasicAuthHint"),
+    },
+    { value: "cors", label: t("routeForm.mwCors"), description: t("routeForm.mwCorsHint") },
+  ];
 
   // Matcher state
   const [hosts, setHosts] = useState("");
@@ -164,7 +183,6 @@ export function RouteFormDialog({
             setStaticStatus(String(sr.status_code ?? "200"));
           }
         } else if (handler.handler === "headers") {
-          // Check if it's CORS (has Access-Control headers) or regular headers
           const hdrHandler = handler as HeadersHandler;
           const responseSet = hdrHandler.response?.set;
           if (responseSet && "Access-Control-Allow-Origin" in responseSet) {
@@ -265,7 +283,6 @@ export function RouteFormDialog({
   function buildHandlers(): HttpHandler[] {
     const handlers: HttpHandler[] = [];
 
-    // Middleware handlers first (order matters in Caddy)
     if (enabledMiddleware.has("authentication") && authHandler) {
       handlers.push(authHandler);
     }
@@ -282,7 +299,6 @@ export function RouteFormDialog({
       handlers.push(encodeHandler);
     }
 
-    // Primary handler last
     switch (handlerType) {
       case "reverse_proxy": {
         const upstreams = proxyUpstreams
@@ -335,7 +351,6 @@ export function RouteFormDialog({
     } else {
       updated.add(mw);
       setExpandedMiddleware(mw);
-      // Initialize default values
       if (mw === "encode" && !encodeHandler) {
         setEncodeHandler({
           handler: "encode",
@@ -353,40 +368,39 @@ export function RouteFormDialog({
       <DialogContent onClose={() => onOpenChange(false)} className="max-w-2xl max-h-[85vh]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Route" : "New Route"}</DialogTitle>
-            <DialogDescription>
-              Configure matchers (when to trigger), middleware (pre-processing), and handlers (what
-              to do).
-            </DialogDescription>
+            <DialogTitle>
+              {isEdit ? t("routeForm.editTitle") : t("routeForm.createTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("routeForm.description")}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto pr-2">
             {/* ===== MATCHERS SECTION ===== */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold border-b pb-1">Matchers</h4>
+              <h4 className="text-sm font-semibold border-b pb-1">{t("routeForm.matchers")}</h4>
               <div className="space-y-2">
-                <Label htmlFor="hosts">Hosts (comma-separated)</Label>
+                <Label htmlFor="hosts">{t("routeForm.hosts")}</Label>
                 <Input
                   id="hosts"
-                  placeholder="example.com, www.example.com"
+                  placeholder={t("routeForm.hostsPlaceholder")}
                   value={hosts}
                   onChange={(e) => setHosts(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="paths">Paths (comma-separated)</Label>
+                <Label htmlFor="paths">{t("routeForm.paths")}</Label>
                 <Input
                   id="paths"
-                  placeholder="/api/*, /static/*"
+                  placeholder={t("routeForm.pathsPlaceholder")}
                   value={paths}
                   onChange={(e) => setPaths(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="methods">Methods (comma-separated, optional)</Label>
+                <Label htmlFor="methods">{t("routeForm.methods")}</Label>
                 <Input
                   id="methods"
-                  placeholder="GET, POST"
+                  placeholder={t("routeForm.methodsPlaceholder")}
                   value={methods}
                   onChange={(e) => setMethods(e.target.value)}
                 />
@@ -403,7 +417,7 @@ export function RouteFormDialog({
                 ) : (
                   <ChevronRight className="h-3 w-3" />
                 )}
-                Advanced matchers (header, query, IP, protocol)
+                {t("routeForm.advancedMatchers")}
               </button>
 
               {showAdvancedMatchers && (
@@ -418,10 +432,9 @@ export function RouteFormDialog({
 
             {/* ===== MIDDLEWARE SECTION ===== */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold border-b pb-1">Middleware</h4>
+              <h4 className="text-sm font-semibold border-b pb-1">{t("routeForm.middleware")}</h4>
               <p className="text-xs text-muted-foreground">
-                Middleware processes the request before the primary handler. Enable and configure as
-                needed.
+                {t("routeForm.middlewareDescription")}
               </p>
 
               <div className="space-y-2">
@@ -464,7 +477,6 @@ export function RouteFormDialog({
                       </button>
                     </div>
 
-                    {/* Expanded middleware form */}
                     {enabledMiddleware.has(mw.value) && expandedMiddleware === mw.value && (
                       <div className="px-3 pb-3 pt-1 border-t">
                         {mw.value === "headers" && (
@@ -491,9 +503,11 @@ export function RouteFormDialog({
 
             {/* ===== PRIMARY HANDLER SECTION ===== */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold border-b pb-1">Primary Handler</h4>
+              <h4 className="text-sm font-semibold border-b pb-1">
+                {t("routeForm.primaryHandler")}
+              </h4>
               <div className="space-y-2">
-                <Label htmlFor="handler-type">Type</Label>
+                <Label htmlFor="handler-type">{t("routeForm.handlerType")}</Label>
                 <Select
                   id="handler-type"
                   value={handlerType}
@@ -507,28 +521,25 @@ export function RouteFormDialog({
                 </Select>
               </div>
 
-              {/* Handler-specific fields */}
               {handlerType === "reverse_proxy" && (
                 <div className="space-y-2">
-                  <Label htmlFor="upstreams">Upstreams (comma-separated)</Label>
+                  <Label htmlFor="upstreams">{t("routeForm.upstreams")}</Label>
                   <Input
                     id="upstreams"
-                    placeholder="localhost:3000, localhost:3001"
+                    placeholder={t("routeForm.upstreamsPlaceholder")}
                     value={proxyUpstreams}
                     onChange={(e) => setProxyUpstreams(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Backend addresses to proxy to. Format: host:port
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t("routeForm.upstreamsHint")}</p>
                 </div>
               )}
 
               {handlerType === "file_server" && (
                 <div className="space-y-2">
-                  <Label htmlFor="file-root">Root Directory</Label>
+                  <Label htmlFor="file-root">{t("routeForm.rootDirectory")}</Label>
                   <Input
                     id="file-root"
-                    placeholder="/var/www/html"
+                    placeholder={t("routeForm.rootPlaceholder")}
                     value={fileRoot}
                     onChange={(e) => setFileRoot(e.target.value)}
                   />
@@ -538,20 +549,20 @@ export function RouteFormDialog({
               {handlerType === "static_response" && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="static-status">Status Code</Label>
+                    <Label htmlFor="static-status">{t("routeForm.statusCode")}</Label>
                     <Input
                       id="static-status"
-                      placeholder="200"
+                      placeholder={t("routeForm.statusCodePlaceholder")}
                       value={staticStatus}
                       onChange={(e) => setStaticStatus(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="static-body">Response Body</Label>
+                    <Label htmlFor="static-body">{t("routeForm.responseBody")}</Label>
                     <textarea
                       id="static-body"
                       className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px] resize-y"
-                      placeholder="Hello, World!"
+                      placeholder={t("routeForm.responsePlaceholder")}
                       value={staticBody}
                       onChange={(e) => setStaticBody(e.target.value)}
                     />
@@ -562,25 +573,25 @@ export function RouteFormDialog({
               {handlerType === "redir" && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="redir-url">Redirect URL</Label>
+                    <Label htmlFor="redir-url">{t("routeForm.redirectUrl")}</Label>
                     <Input
                       id="redir-url"
-                      placeholder="https://example.com{uri}"
+                      placeholder={t("routeForm.redirectPlaceholder")}
                       value={redirUrl}
                       onChange={(e) => setRedirUrl(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="redir-status">Status Code</Label>
+                    <Label htmlFor="redir-status">{t("routeForm.redirectStatusCode")}</Label>
                     <Select
                       id="redir-status"
                       value={redirStatus}
                       onChange={(e) => setRedirStatus(e.target.value)}
                     >
-                      <option value="301">301 - Permanent</option>
-                      <option value="302">302 - Temporary</option>
-                      <option value="307">307 - Temporary (preserve method)</option>
-                      <option value="308">308 - Permanent (preserve method)</option>
+                      <option value="301">{t("routeForm.redirect301")}</option>
+                      <option value="302">{t("routeForm.redirect302")}</option>
+                      <option value="307">{t("routeForm.redirect307")}</option>
+                      <option value="308">{t("routeForm.redirect308")}</option>
                     </Select>
                   </div>
                 </>
@@ -597,17 +608,21 @@ export function RouteFormDialog({
                 className="h-4 w-4 rounded border-input"
               />
               <Label htmlFor="terminal" className="font-normal">
-                Terminal (stop processing after this route matches)
+                {t("routeForm.terminal")}
               </Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tc("actions.cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : isEdit ? "Update" : "Add Route"}
+              {loading
+                ? tc("status.saving")
+                : isEdit
+                  ? t("routeForm.update")
+                  : t("routeForm.addRoute")}
             </Button>
           </DialogFooter>
         </form>

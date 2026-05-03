@@ -6,6 +6,7 @@
 
 import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LogFormDialog } from "@/components/logging/log-form-dialog";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ function getOutputLabel(log: LogConfig): string {
 }
 
 export function LoggingPage() {
+  const { t } = useTranslation("logging");
   const { data: logging, isLoading, isError, error } = useLogging();
   const upsertLog = useUpsertLog();
   const deleteLog = useDeleteLog();
@@ -65,8 +67,8 @@ export function LoggingPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logging</h1>
-          <p className="text-muted-foreground">Loading logging configuration...</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("loadingSubtitle")}</p>
         </div>
       </div>
     );
@@ -76,13 +78,13 @@ export function LoggingPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logging</h1>
-          <p className="text-muted-foreground">Configure log outputs, levels, and formats.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Card className="border-destructive">
           <CardContent className="pt-6">
             <p className="text-sm text-destructive">
-              Failed to load logging configuration: {error?.message}
+              {t("loadError", { message: error?.message })}
             </p>
           </CardContent>
         </Card>
@@ -95,12 +97,12 @@ export function LoggingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logging</h1>
-          <p className="text-muted-foreground">Configure log outputs, levels, and formats.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Button onClick={handleAdd}>
           <Plus className="h-4 w-4" />
-          Add Log
+          {t("addLog")}
         </Button>
       </div>
 
@@ -109,14 +111,13 @@ export function LoggingPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No Logs Configured</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("empty.title")}</p>
             <p className="text-xs text-muted-foreground mt-1 mb-4 text-center max-w-sm">
-              Caddy logs to stderr by default. Add named log configurations to customize output
-              destinations, levels, and formats.
+              {t("empty.description")}
             </p>
             <Button variant="outline" onClick={handleAdd}>
               <Plus className="h-4 w-4" />
-              Add First Log
+              {t("addFirstLog")}
             </Button>
           </CardContent>
         </Card>
@@ -156,12 +157,12 @@ export function LoggingPage() {
                   <Badge variant="secondary">{log.encoder?.format ?? "console"}</Badge>
                   {log.include && log.include.length > 0 && (
                     <Badge variant="outline" className="text-xs">
-                      include: {log.include.length}
+                      {t("include", { count: log.include.length })}
                     </Badge>
                   )}
                   {log.exclude && log.exclude.length > 0 && (
                     <Badge variant="outline" className="text-xs">
-                      exclude: {log.exclude.length}
+                      {t("exclude", { count: log.exclude.length })}
                     </Badge>
                   )}
                 </div>
@@ -187,9 +188,9 @@ export function LoggingPage() {
         onOpenChange={(open) => {
           if (!open) setDeletingName(null);
         }}
-        title="Delete Log"
-        description={`Are you sure you want to delete the "${deletingName}" log configuration? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title={t("deleteLog.title")}
+        description={t("deleteLog.description", { name: deletingName ?? "" })}
+        confirmLabel={t("deleteLog.confirm")}
         onConfirm={handleDelete}
         loading={deleteLog.isPending}
       />

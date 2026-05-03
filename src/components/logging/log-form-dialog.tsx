@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,6 +39,8 @@ export function LogFormDialog({
   initialName,
   initialLog,
 }: LogFormDialogProps) {
+  const { t } = useTranslation("middleware");
+  const { t: tc } = useTranslation();
   const isEdit = !!initialName;
 
   const [name, setName] = useState("");
@@ -58,7 +61,6 @@ export function LogFormDialog({
       setName(initialName);
       setLevel((initialLog.level as LogLevel) ?? "INFO");
 
-      // Parse writer
       const writer = initialLog.writer;
       if (writer) {
         if (writer.output === "file") {
@@ -76,10 +78,7 @@ export function LogFormDialog({
         }
       }
 
-      // Parse encoder
       setEncoderFormat((initialLog.encoder?.format as EncoderFormat) ?? "console");
-
-      // Parse include/exclude
       setIncludes(initialLog.include?.join(", ") ?? "");
       setExcludes(initialLog.exclude?.join(", ") ?? "");
     } else {
@@ -138,31 +137,27 @@ export function LogFormDialog({
       <DialogContent onClose={() => onOpenChange(false)} className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Log" : "New Log"}</DialogTitle>
-            <DialogDescription>
-              Configure a named log with output destination, format, and level.
-            </DialogDescription>
+            <DialogTitle>{isEdit ? t("logForm.editTitle") : t("logForm.createTitle")}</DialogTitle>
+            <DialogDescription>{t("logForm.description")}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="log-name">Log Name</Label>
+              <Label htmlFor="log-name">{t("logForm.logName")}</Label>
               <Input
                 id="log-name"
-                placeholder="default"
+                placeholder={t("logForm.logNamePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isEdit}
               />
-              <p className="text-xs text-muted-foreground">
-                Use &quot;default&quot; for the default logger, or any custom name.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("logForm.logNameHint")}</p>
             </div>
 
             {/* Level */}
             <div className="space-y-2">
-              <Label htmlFor="log-level">Level</Label>
+              <Label htmlFor="log-level">{t("logForm.level")}</Label>
               <Select
                 id="log-level"
                 value={level}
@@ -177,16 +172,16 @@ export function LogFormDialog({
 
             {/* Output */}
             <div className="space-y-2">
-              <Label htmlFor="log-output">Output</Label>
+              <Label htmlFor="log-output">{t("logForm.output")}</Label>
               <Select
                 id="log-output"
                 value={outputType}
                 onChange={(e) => setOutputType(e.target.value as OutputType)}
               >
-                <option value="stdout">stdout</option>
-                <option value="stderr">stderr</option>
-                <option value="file">File</option>
-                <option value="discard">Discard (no output)</option>
+                <option value="stdout">{t("logForm.outputStdout")}</option>
+                <option value="stderr">{t("logForm.outputStderr")}</option>
+                <option value="file">{t("logForm.outputFile")}</option>
+                <option value="discard">{t("logForm.outputDiscard")}</option>
               </Select>
             </div>
 
@@ -194,17 +189,17 @@ export function LogFormDialog({
             {outputType === "file" && (
               <div className="space-y-3 pl-3 border-l-2 border-muted">
                 <div className="space-y-2">
-                  <Label htmlFor="log-filename">File Path</Label>
+                  <Label htmlFor="log-filename">{t("logForm.filePath")}</Label>
                   <Input
                     id="log-filename"
-                    placeholder="/var/log/caddy/access.log"
+                    placeholder={t("logForm.filePathPlaceholder")}
                     value={filename}
                     onChange={(e) => setFilename(e.target.value)}
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Max Size (MB)</Label>
+                    <Label className="text-xs">{t("logForm.maxSize")}</Label>
                     <Input
                       type="number"
                       value={rollSizeMb}
@@ -212,7 +207,7 @@ export function LogFormDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Keep Files</Label>
+                    <Label className="text-xs">{t("logForm.keepFiles")}</Label>
                     <Input
                       type="number"
                       value={rollKeep}
@@ -220,7 +215,7 @@ export function LogFormDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Keep Days</Label>
+                    <Label className="text-xs">{t("logForm.keepDays")}</Label>
                     <Input
                       type="number"
                       value={rollKeepDays}
@@ -233,36 +228,34 @@ export function LogFormDialog({
 
             {/* Format */}
             <div className="space-y-2">
-              <Label htmlFor="log-format">Encoder Format</Label>
+              <Label htmlFor="log-format">{t("logForm.encoderFormat")}</Label>
               <Select
                 id="log-format"
                 value={encoderFormat}
                 onChange={(e) => setEncoderFormat(e.target.value as EncoderFormat)}
               >
-                <option value="console">Console (human-readable)</option>
-                <option value="json">JSON (structured)</option>
+                <option value="console">{t("logForm.formatConsole")}</option>
+                <option value="json">{t("logForm.formatJson")}</option>
               </Select>
             </div>
 
             {/* Include/Exclude */}
             <div className="space-y-2">
-              <Label htmlFor="log-include">Include Loggers (comma-separated, optional)</Label>
+              <Label htmlFor="log-include">{t("logForm.includeLoggers")}</Label>
               <Input
                 id="log-include"
-                placeholder="http.log.access"
+                placeholder={t("logForm.includePlaceholder")}
                 value={includes}
                 onChange={(e) => setIncludes(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Only process log entries from these loggers.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("logForm.includeHint")}</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="log-exclude">Exclude Loggers (comma-separated, optional)</Label>
+              <Label htmlFor="log-exclude">{t("logForm.excludeLoggers")}</Label>
               <Input
                 id="log-exclude"
-                placeholder="http.log.access.log0"
+                placeholder={t("logForm.excludePlaceholder")}
                 value={excludes}
                 onChange={(e) => setExcludes(e.target.value)}
               />
@@ -271,10 +264,10 @@ export function LogFormDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tc("actions.cancel")}
             </Button>
             <Button type="submit" disabled={loading || !name.trim()}>
-              {loading ? "Saving..." : isEdit ? "Update" : "Add Log"}
+              {loading ? tc("status.saving") : isEdit ? t("logForm.update") : t("logForm.addLog")}
             </Button>
           </DialogFooter>
         </form>

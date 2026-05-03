@@ -1,0 +1,25 @@
+{
+  "rawConfig": {
+    "title": "原始配置",
+    "subtitle": "查看和编辑完整的 Caddy JSON 配置。",
+    "jsonTitle": "JSON 配置",
+    "jsonDescription": "编辑下方配置，点击「应用」通过 POST /load 加载。",
+    "unsavedChanges": "未保存的更改",
+    "loadError": "加载失败：{{message}}",
+    "applyError": "应用配置失败：{{message}}",
+    "adminWarning": {
+      "title": "管理 API 配置已更改",
+      "description": "修改 admin 部分可能导致此面板失去连接。如果更改了管理 API 的监听地址或禁用了 API，面板将无法与 Caddy 通信，直到手动修正配置。"
+    }
+  },
+  "globalConfig": {
+    "title": "全局配置",
+    "subtitle": "配置管理 API、日志、存储和其他全局设置。",
+    "comingSoon": "即将推出",
+    "comingSoonDescription": "此功能计划在未来版本中实现。"
+  },
+  "notFound": {
+    "title": "404",
+    "description": "页面未找到"
+  }
+}

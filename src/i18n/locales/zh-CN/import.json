@@ -1,0 +1,35 @@
+{
+  "title": "导入 Caddyfile",
+  "subtitle": "将 Caddyfile 转换为 JSON 并应用为运行配置。",
+  "warning": {
+    "title": "完全替换配置",
+    "description": "导入 Caddyfile 将<strong>替换整个运行配置</strong>。所有现有服务器、路由和 TLS 设置将被覆盖。"
+  },
+  "caddyfile": {
+    "title": "Caddyfile",
+    "description": "粘贴 Caddyfile 内容或上传文件。",
+    "placeholder": "# 示例 Caddyfile\nexample.com {\n    reverse_proxy localhost:3000\n}\n\napi.example.com {\n    reverse_proxy localhost:8080\n}",
+    "adaptHint": "使用 Caddy 的 /adapt 接口进行转换。"
+  },
+  "uploadFile": "上传文件",
+  "converting": "转换中...",
+  "convertPreview": "转换并预览",
+  "convertSuccess": "Caddyfile 转换成功",
+  "convertError": "Caddyfile 转换失败",
+  "jsonPreview": {
+    "title": "JSON 预览",
+    "description": "这是将要应用的配置结果。",
+    "readyBadge": "可以应用"
+  },
+  "applyConfig": "应用配置",
+  "applySuccess": "配置应用成功",
+  "applyError": "配置应用失败",
+  "confirmDialog": {
+    "title": "替换整个配置？",
+    "description": "这将用转换后的 Caddyfile 覆盖整个 Caddy 运行配置。所有现有服务器、路由和 TLS 策略将被替换。此操作无法撤销。",
+    "confirm": "应用配置"
+  },
+  "warnings": {
+    "title": "警告 ({{count}})"
+  }
+}

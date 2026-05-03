@@ -2,12 +2,15 @@
  * Dashboard page — overview of Caddy status and quick stats.
  */
 
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfig } from "@/hooks/use-config";
 import { useConnectionStore } from "@/stores/connection";
 
 export function DashboardPage() {
+  const { t } = useTranslation("dashboard");
+  const { t: tc } = useTranslation();
   const { data: config, isLoading, isError } = useConfig();
   const connectionStatus = useConnectionStore((s) => s.status);
 
@@ -22,8 +25,8 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your Caddy server status.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       {/* Status Cards */}
@@ -31,7 +34,7 @@ export function DashboardPage() {
         {/* Connection Status */}
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Connection</CardDescription>
+            <CardDescription>{t("connection")}</CardDescription>
             <CardTitle className="flex items-center gap-2">
               <Badge
                 variant={
@@ -42,13 +45,13 @@ export function DashboardPage() {
                       : "secondary"
                 }
               >
-                {connectionStatus}
+                {tc(`status.${connectionStatus}`)}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">
-              Admin API at {config?.admin?.listen ?? "localhost:2019"}
+              {t("adminApiAt", { address: config?.admin?.listen ?? "localhost:2019" })}
             </p>
           </CardContent>
         </Card>
@@ -56,14 +59,14 @@ export function DashboardPage() {
         {/* Server Count */}
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>HTTP Servers</CardDescription>
+            <CardDescription>{t("httpServers")}</CardDescription>
             <CardTitle>{isLoading ? "..." : isError ? "N/A" : serverCount}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">
               {listenAddresses.length > 0
-                ? `Listening on ${listenAddresses.join(", ")}`
-                : "No servers configured"}
+                ? t("listeningOn", { addresses: listenAddresses.join(", ") })
+                : t("noServers")}
             </p>
           </CardContent>
         </Card>
@@ -71,14 +74,14 @@ export function DashboardPage() {
         {/* Admin Config */}
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Admin API</CardDescription>
+            <CardDescription>{t("adminApi")}</CardDescription>
             <CardTitle className="text-base">
-              {config?.admin?.disabled ? "Disabled" : (config?.admin?.listen ?? ":2019")}
+              {config?.admin?.disabled ? t("disabled") : (config?.admin?.listen ?? ":2019")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">
-              {config?.admin?.enforce_origin ? "Origin enforcement enabled" : "Default security"}
+              {config?.admin?.enforce_origin ? t("originEnforcement") : t("defaultSecurity")}
             </p>
           </CardContent>
         </Card>
@@ -88,31 +91,43 @@ export function DashboardPage() {
       {config && (
         <Card>
           <CardHeader>
-            <CardTitle>Configuration Summary</CardTitle>
-            <CardDescription>Current active configuration overview</CardDescription>
+            <CardTitle>{t("configSummary.title")}</CardTitle>
+            <CardDescription>{t("configSummary.subtitle")}</CardDescription>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <dt className="text-sm font-medium text-muted-foreground">Apps Loaded</dt>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  {t("configSummary.appsLoaded")}
+                </dt>
                 <dd className="text-sm">
-                  {config.apps ? Object.keys(config.apps).join(", ") : "None"}
+                  {config.apps ? Object.keys(config.apps).join(", ") : t("configSummary.none")}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-muted-foreground">Logging</dt>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  {t("configSummary.logging")}
+                </dt>
                 <dd className="text-sm">
                   {config.logging?.logs
-                    ? `${Object.keys(config.logging.logs).length} logger(s)`
-                    : "Default"}
+                    ? t("configSummary.loggerCount", {
+                        count: Object.keys(config.logging.logs).length,
+                      })
+                    : t("configSummary.loggerDefault")}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-muted-foreground">Storage</dt>
-                <dd className="text-sm">{config.storage?.module ?? "file_system (default)"}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  {t("configSummary.storage")}
+                </dt>
+                <dd className="text-sm">
+                  {config.storage?.module ?? t("configSummary.storageDefault")}
+                </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-muted-foreground">HTTP Port</dt>
+                <dt className="text-sm font-medium text-muted-foreground">
+                  {t("configSummary.httpPort")}
+                </dt>
                 <dd className="text-sm">{config.apps?.http?.http_port ?? 80}</dd>
               </div>
             </dl>

@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { EncodeHandler } from "@/types/handlers";
@@ -15,6 +16,7 @@ interface EncodeFormProps {
 }
 
 export function EncodeForm({ value, onChange }: EncodeFormProps) {
+  const { t } = useTranslation("middleware");
   const [gzipEnabled, setGzipEnabled] = useState(true);
   const [zstdEnabled, setZstdEnabled] = useState(true);
   const [minLength, setMinLength] = useState("256");
@@ -74,7 +76,7 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
     <div className="space-y-4">
       {/* Encoding algorithms */}
       <section className="space-y-3">
-        <Label className="text-sm font-semibold">Encodings</Label>
+        <Label className="text-sm font-semibold">{t("encode.encodings")}</Label>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <input
@@ -85,9 +87,9 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
               className="h-4 w-4 rounded border-input"
             />
             <Label htmlFor="encode-gzip" className="font-normal">
-              gzip
+              {t("encode.gzip")}
             </Label>
-            <span className="text-xs text-muted-foreground">(widely supported)</span>
+            <span className="text-xs text-muted-foreground">{t("encode.gzipHint")}</span>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -98,9 +100,9 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
               className="h-4 w-4 rounded border-input"
             />
             <Label htmlFor="encode-zstd" className="font-normal">
-              zstd
+              {t("encode.zstd")}
             </Label>
-            <span className="text-xs text-muted-foreground">(faster, better ratio)</span>
+            <span className="text-xs text-muted-foreground">{t("encode.zstdHint")}</span>
           </div>
         </div>
       </section>
@@ -108,7 +110,7 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
       {/* Preference order */}
       {gzipEnabled && zstdEnabled && (
         <section className="space-y-2">
-          <Label className="text-sm font-semibold">Preferred Encoding</Label>
+          <Label className="text-sm font-semibold">{t("encode.preferred")}</Label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
               <input
@@ -119,7 +121,7 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
                 onChange={() => handlePreferChange("zstd")}
                 className="h-4 w-4"
               />
-              <span className="text-sm">zstd first</span>
+              <span className="text-sm">{t("encode.zstdFirst")}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -130,19 +132,17 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
                 onChange={() => handlePreferChange("gzip")}
                 className="h-4 w-4"
               />
-              <span className="text-sm">gzip first</span>
+              <span className="text-sm">{t("encode.gzipFirst")}</span>
             </label>
           </div>
-          <p className="text-xs text-muted-foreground">
-            The preferred encoding is used when the client supports both.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("encode.preferredHint")}</p>
         </section>
       )}
 
       {/* Minimum length */}
       <section className="space-y-2">
         <Label htmlFor="encode-min-length" className="text-sm font-semibold">
-          Minimum Length (bytes)
+          {t("encode.minLength")}
         </Label>
         <Input
           id="encode-min-length"
@@ -153,9 +153,7 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
           onChange={(e) => handleMinLengthChange(e.target.value)}
           className="w-32"
         />
-        <p className="text-xs text-muted-foreground">
-          Responses smaller than this won&apos;t be compressed.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("encode.minLengthHint")}</p>
       </section>
     </div>
   );

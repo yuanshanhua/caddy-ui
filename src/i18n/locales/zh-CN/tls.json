@@ -1,0 +1,16 @@
+{
+  "title": "TLS / 证书",
+  "subtitle": "管理 TLS 证书和自动化策略。",
+  "loadingSubtitle": "加载 TLS 配置...",
+  "loadError": "加载 TLS 配置失败：{{message}}",
+  "noConfig": {
+    "title": "无 TLS 配置",
+    "description": "Caddy 会自动为 HTTP 服务器中配置的域名管理 HTTPS。添加自动化策略以自定义证书签发行为。"
+  },
+  "certificates": {
+    "title": "证书"
+  },
+  "policies": {
+    "title": "自动化策略"
+  }
+}

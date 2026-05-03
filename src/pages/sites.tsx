@@ -4,6 +4,7 @@
 
 import { ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ServerFormDialog } from "@/components/sites/server-form-dialog";
@@ -15,6 +16,7 @@ import { useCreateSite, useDeleteSite, useEnsureHttpApp } from "@/hooks/use-site
 import type { HttpServer } from "@/types/http-app";
 
 export function SitesPage() {
+  const { t } = useTranslation("sites");
   const { data: config, isLoading, isError, error } = useConfig();
   const createSite = useCreateSite();
   const deleteSite = useDeleteSite();
@@ -39,8 +41,10 @@ export function SitesPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Sites</h1>
-        <p className="text-muted-foreground">Loading...</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground">
+          {t("loadingSubtitle", { defaultValue: "Loading..." })}
+        </p>
       </div>
     );
   }
@@ -48,11 +52,14 @@ export function SitesPage() {
   if (isError) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Sites</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
         <Card className="border-destructive">
           <CardContent className="pt-6">
             <p className="text-sm text-destructive">
-              Failed to load configuration: {error?.message}
+              {t("loadError", {
+                defaultValue: "Failed to load configuration: {{message}}",
+                message: error?.message,
+              })}
             </p>
           </CardContent>
         </Card>
@@ -67,25 +74,23 @@ export function SitesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sites</h1>
-          <p className="text-muted-foreground">Manage your HTTP servers and routes.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)}>
           <Plus className="h-4 w-4" />
-          New Server
+          {t("newServer")}
         </Button>
       </div>
 
       {serverEntries.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-lg font-medium text-muted-foreground">No servers configured</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Add a server to start serving traffic.
-            </p>
+            <p className="text-lg font-medium text-muted-foreground">{t("noServers")}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("noServersHint")}</p>
             <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4" />
-              Create Your First Server
+              {t("createFirst")}
             </Button>
           </CardContent>
         </Card>
@@ -98,14 +103,16 @@ export function SitesPage() {
                   <div>
                     <CardTitle className="font-mono text-base">{serverId}</CardTitle>
                     <CardDescription>
-                      {server.listen?.join(", ") ?? "No listen address"}
+                      {server.listen?.join(", ") ?? t("noListenAddress")}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     {server.automatic_https?.disable && (
-                      <Badge variant="warning">HTTPS disabled</Badge>
+                      <Badge variant="warning">{t("httpsDisabled")}</Badge>
                     )}
-                    <Badge variant="outline">{server.routes?.length ?? 0} route(s)</Badge>
+                    <Badge variant="outline">
+                      {t("routeCount", { count: server.routes?.length ?? 0 })}
+                    </Badge>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -151,7 +158,7 @@ export function SitesPage() {
                               </span>
                             )}
                             {hosts.length === 0 && paths.length === 0 && (
-                              <span className="text-muted-foreground italic">catch-all</span>
+                              <span className="text-muted-foreground italic">{t("catchAll")}</span>
                             )}
                           </div>
                           <div className="flex gap-1">
@@ -166,12 +173,12 @@ export function SitesPage() {
                     })}
                     {server.routes.length > 5 && (
                       <p className="text-xs text-muted-foreground text-center">
-                        ... and {server.routes.length - 5} more routes
+                        {t("moreRoutes", { count: server.routes.length - 5 })}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No routes configured</p>
+                  <p className="text-sm text-muted-foreground">{t("noRoutes")}</p>
                 )}
               </CardContent>
             </Card>
@@ -193,9 +200,9 @@ export function SitesPage() {
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
-        title="Delete Server"
-        description={`Are you sure you want to delete server "${deleteTarget}"? This will remove all its routes and configuration. This action cannot be undone.`}
-        confirmLabel="Delete"
+        title={t("deleteServer.title")}
+        description={t("deleteServer.description", { serverId: deleteTarget ?? "" })}
+        confirmLabel={t("deleteServer.confirm")}
         onConfirm={handleDelete}
         loading={deleteSite.isPending}
       />

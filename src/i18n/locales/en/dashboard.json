@@ -1,0 +1,25 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Overview of your Caddy server status.",
+  "connection": "Connection",
+  "httpServers": "HTTP Servers",
+  "adminApi": "Admin API",
+  "adminApiAt": "Admin API at {{address}}",
+  "listeningOn": "Listening on {{addresses}}",
+  "noServers": "No servers configured",
+  "disabled": "Disabled",
+  "originEnforcement": "Origin enforcement enabled",
+  "defaultSecurity": "Default security",
+  "configSummary": {
+    "title": "Configuration Summary",
+    "subtitle": "Current active configuration overview",
+    "appsLoaded": "Apps Loaded",
+    "none": "None",
+    "logging": "Logging",
+    "loggerCount": "{{count}} logger(s)",
+    "loggerDefault": "Default",
+    "storage": "Storage",
+    "storageDefault": "file_system (default)",
+    "httpPort": "HTTP Port"
+  }
+}

@@ -2,16 +2,18 @@
  * Connection indicator — shows whether the Caddy Admin API is reachable.
  */
 
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { useConnection } from "@/hooks/use-connection";
 
 export function ConnectionIndicator() {
+  const { t } = useTranslation();
   const { status } = useConnection();
 
   const variants = {
-    connected: { variant: "success" as const, label: "Connected" },
-    disconnected: { variant: "destructive" as const, label: "Disconnected" },
-    checking: { variant: "secondary" as const, label: "Checking..." },
+    connected: { variant: "success" as const, label: t("status.connected") },
+    disconnected: { variant: "destructive" as const, label: t("status.disconnected") },
+    checking: { variant: "secondary" as const, label: t("status.checking") },
   };
 
   const { variant, label } = variants[status];

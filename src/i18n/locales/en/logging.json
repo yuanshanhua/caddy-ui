@@ -1,0 +1,26 @@
+{
+  "title": "Logging",
+  "subtitle": "Configure log outputs, levels, and formats.",
+  "loadingSubtitle": "Loading logging configuration...",
+  "loadError": "Failed to load logging configuration: {{message}}",
+  "addLog": "Add Log",
+  "addFirstLog": "Add First Log",
+  "empty": {
+    "title": "No Logs Configured",
+    "description": "Caddy logs to stderr by default. Add named log configurations to customize output destinations, levels, and formats."
+  },
+  "output": {
+    "default": "default",
+    "stdout": "stdout",
+    "stderr": "stderr",
+    "file": "file",
+    "discard": "discard"
+  },
+  "deleteLog": {
+    "title": "Delete Log",
+    "description": "Are you sure you want to delete the \"{{name}}\" log configuration? This action cannot be undone.",
+    "confirm": "Delete"
+  },
+  "include": "include: {{count}}",
+  "exclude": "exclude: {{count}}"
+}

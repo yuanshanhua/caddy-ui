@@ -4,6 +4,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,6 +36,8 @@ export function ServerFormDialog({
   initialId,
   initialServer,
 }: ServerFormDialogProps) {
+  const { t } = useTranslation("middleware");
+  const { t: tc } = useTranslation();
   const isEdit = !!initialId;
 
   const [serverId, setServerId] = useState("");
@@ -89,38 +92,36 @@ export function ServerFormDialog({
       <DialogContent onClose={() => onOpenChange(false)} className="max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit Server" : "New Server"}</DialogTitle>
+            <DialogTitle>
+              {isEdit ? t("serverForm.editTitle") : t("serverForm.createTitle")}
+            </DialogTitle>
             <DialogDescription>
-              {isEdit
-                ? "Modify the server configuration."
-                : "Create a new HTTP server with listen addresses."}
+              {isEdit ? t("serverForm.editDescription") : t("serverForm.createDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Server ID */}
             <div className="space-y-2">
-              <Label htmlFor="server-id">Server ID</Label>
+              <Label htmlFor="server-id">{t("serverForm.serverId")}</Label>
               <Input
                 id="server-id"
-                placeholder="e.g., srv0, my-site"
+                placeholder={t("serverForm.serverIdPlaceholder")}
                 value={serverId}
                 onChange={(e) => setServerId(e.target.value)}
                 disabled={isEdit}
               />
-              <p className="text-xs text-muted-foreground">
-                Unique identifier for this server. Cannot be changed after creation.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("serverForm.serverIdHint")}</p>
             </div>
 
             {/* Listen Addresses */}
             <div className="space-y-2">
-              <Label>Listen Addresses</Label>
+              <Label>{t("serverForm.listenAddresses")}</Label>
               <div className="space-y-2">
                 {listenAddresses.map((addr, idx) => (
                   <div key={idx} className="flex gap-2">
                     <Input
-                      placeholder=":443 or :80 or 0.0.0.0:8080"
+                      placeholder={t("serverForm.listenPlaceholder")}
                       value={addr}
                       onChange={(e) => handleAddressChange(idx, e.target.value)}
                     />
@@ -139,7 +140,7 @@ export function ServerFormDialog({
               </div>
               <Button type="button" variant="outline" size="sm" onClick={handleAddAddress}>
                 <Plus className="h-3 w-3" />
-                Add Address
+                {t("serverForm.addAddress")}
               </Button>
             </div>
 
@@ -153,17 +154,21 @@ export function ServerFormDialog({
                 className="h-4 w-4 rounded border-input"
               />
               <Label htmlFor="disable-https" className="font-normal">
-                Disable automatic HTTPS
+                {t("serverForm.disableHttps")}
               </Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tc("actions.cancel")}
             </Button>
             <Button type="submit" disabled={loading || !serverId.trim()}>
-              {loading ? "Saving..." : isEdit ? "Update" : "Create"}
+              {loading
+                ? tc("status.saving")
+                : isEdit
+                  ? t("serverForm.update")
+                  : t("serverForm.create")}
             </Button>
           </DialogFooter>
         </form>

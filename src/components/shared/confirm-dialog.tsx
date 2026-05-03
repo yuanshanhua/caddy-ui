@@ -3,6 +3,7 @@
  */
 
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,12 +31,14 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Confirm",
+  confirmLabel,
   onConfirm,
   loading = false,
   variant = "destructive",
   children,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onClose={() => onOpenChange(false)}>
@@ -46,10 +49,10 @@ export function ConfirmDialog({
         {children}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            Cancel
+            {t("actions.cancel")}
           </Button>
           <Button variant={variant} onClick={onConfirm} disabled={loading}>
-            {loading ? "..." : confirmLabel}
+            {loading ? "..." : (confirmLabel ?? t("actions.confirm"))}
           </Button>
         </DialogFooter>
       </DialogContent>

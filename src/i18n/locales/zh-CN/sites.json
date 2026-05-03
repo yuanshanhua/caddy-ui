@@ -1,0 +1,52 @@
+{
+  "title": "站点",
+  "subtitle": "管理 HTTP 服务器和路由。",
+  "newServer": "新建服务器",
+  "createFirst": "创建第一个服务器",
+  "noServers": "未配置服务器",
+  "noServersHint": "添加一个服务器以开始服务流量。",
+  "noListenAddress": "无监听地址",
+  "httpsDisabled": "HTTPS 已禁用",
+  "routeCount": "{{count}} 条路由",
+  "moreRoutes": "... 以及另外 {{count}} 条路由",
+  "catchAll": "全匹配",
+  "noRoutes": "未配置路由",
+  "noHandler": "无处理器",
+  "terminal": "终止",
+  "backToSites": "返回站点",
+  "serverNotFound": "服务器 \"{{serverId}}\" 不存在。",
+  "serverSettings": "服务器设置",
+  "deleteServer": {
+    "title": "删除服务器",
+    "description": "确定要删除服务器 \"{{serverId}}\" 吗？这将移除其所有路由和配置。此操作无法撤销。",
+    "confirm": "删除"
+  },
+  "detail": {
+    "listen": "监听",
+    "https": "HTTPS",
+    "httpsAutomatic": "自动",
+    "httpsDisabled": "已禁用",
+    "routes": "路由",
+    "routesDescription": "路由按顺序匹配，第一个匹配的路由生效（如果是终止路由）。",
+    "addRoute": "添加路由",
+    "addFirstRoute": "添加第一条路由",
+    "noRoutes": "未配置路由",
+    "deleteRoute": {
+      "title": "删除路由",
+      "description": "确定要删除路由 #{{index}} 吗？此操作无法撤销。",
+      "confirm": "删除"
+    }
+  },
+  "serverForm": {
+    "createTitle": "创建 HTTP 服务器",
+    "editTitle": "编辑服务器",
+    "idLabel": "服务器 ID",
+    "idPlaceholder": "my-server",
+    "idDescription": "此服务器的唯一标识符。",
+    "listenLabel": "监听地址",
+    "listenPlaceholder": ":443",
+    "listenDescription": "监听地址（每行一个）。",
+    "httpsLabel": "禁用自动 HTTPS",
+    "httpsDescription": "勾选后，Caddy 将不会自动为此服务器管理 TLS 证书。"
+  }
+}

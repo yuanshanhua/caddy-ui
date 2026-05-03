@@ -4,6 +4,7 @@
 
 import { AlertTriangle, Copy, RotateCcw, Save } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,8 @@ function hasAdminChanges(original: string, edited: string): boolean {
 }
 
 export function RawConfigPage() {
+  const { t } = useTranslation("config");
+  const { t: tc } = useTranslation();
   const { data: config, isLoading, isError, error } = useConfig();
   const loadMutation = useConfigLoad();
   const [editedJson, setEditedJson] = useState<string | null>(null);
@@ -73,8 +76,8 @@ export function RawConfigPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Raw Configuration</h1>
-        <p className="text-muted-foreground">Loading...</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("rawConfig.title")}</h1>
+        <p className="text-muted-foreground">{tc("status.loading")}</p>
       </div>
     );
   }
@@ -82,10 +85,12 @@ export function RawConfigPage() {
   if (isError) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Raw Configuration</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("rawConfig.title")}</h1>
         <Card className="border-destructive">
           <CardContent className="pt-6">
-            <p className="text-sm text-destructive">Failed to load: {error?.message}</p>
+            <p className="text-sm text-destructive">
+              {t("rawConfig.loadError", { message: error?.message })}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -96,20 +101,20 @@ export function RawConfigPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Raw Configuration</h1>
-          <p className="text-muted-foreground">View and edit the full Caddy JSON configuration.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("rawConfig.title")}</h1>
+          <p className="text-muted-foreground">{t("rawConfig.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          {hasChanges && <Badge variant="warning">Unsaved changes</Badge>}
+          {hasChanges && <Badge variant="warning">{t("rawConfig.unsavedChanges")}</Badge>}
           <Button variant="outline" size="sm" onClick={handleCopy}>
             <Copy className="h-4 w-4" />
-            Copy
+            {tc("actions.copy")}
           </Button>
           {hasChanges && (
             <>
               <Button variant="outline" size="sm" onClick={handleReset}>
                 <RotateCcw className="h-4 w-4" />
-                Reset
+                {tc("actions.reset")}
               </Button>
               <Button
                 size="sm"
@@ -117,7 +122,7 @@ export function RawConfigPage() {
                 disabled={!!parseError || loadMutation.isPending}
               >
                 <Save className="h-4 w-4" />
-                {loadMutation.isPending ? "Saving..." : "Apply"}
+                {loadMutation.isPending ? tc("status.saving") : tc("actions.apply")}
               </Button>
             </>
           )}
@@ -139,13 +144,10 @@ export function RawConfigPage() {
               <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                  Admin API configuration changed
+                  {t("rawConfig.adminWarning.title")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Modifying the <code className="bg-muted px-1 rounded">admin</code> section may
-                  cause this UI to lose connectivity. If you change the admin listen address or
-                  disable the API, the panel will not be able to communicate with Caddy until the
-                  configuration is corrected manually.
+                  {t("rawConfig.adminWarning.description")}
                 </p>
               </div>
             </div>
@@ -157,7 +159,7 @@ export function RawConfigPage() {
         <Card className="border-destructive">
           <CardContent className="pt-4 pb-4">
             <p className="text-sm text-destructive">
-              Failed to apply config: {loadMutation.error?.message}
+              {t("rawConfig.applyError", { message: loadMutation.error?.message })}
             </p>
           </CardContent>
         </Card>
@@ -165,10 +167,8 @@ export function RawConfigPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">JSON Configuration</CardTitle>
-          <CardDescription>
-            Edit the configuration below and click &quot;Apply&quot; to load it via POST /load.
-          </CardDescription>
+          <CardTitle className="text-sm font-medium">{t("rawConfig.jsonTitle")}</CardTitle>
+          <CardDescription>{t("rawConfig.jsonDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <textarea

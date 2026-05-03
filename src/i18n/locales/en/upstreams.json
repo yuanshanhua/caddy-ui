@@ -1,0 +1,29 @@
+{
+  "title": "Upstreams",
+  "subtitle": "Monitor reverse proxy upstream health and traffic. Refreshes every 5 seconds.",
+  "loadingSubtitle": "Loading upstream health status...",
+  "errorSubtitle": "Monitor reverse proxy upstream health.",
+  "loadError": "Failed to load upstream status: {{message}}",
+  "loadErrorHint": "Make sure at least one reverse_proxy handler is configured.",
+  "summary": {
+    "total": "Total Upstreams",
+    "healthy": "Healthy",
+    "degradedDown": "Degraded / Down",
+    "totalRequests": "Total Requests"
+  },
+  "status": {
+    "title": "Upstream Status",
+    "healthy": "Healthy",
+    "degraded": "Degraded",
+    "down": "Down"
+  },
+  "card": {
+    "requests": "Requests",
+    "failures": "Failures",
+    "failRate": "Fail Rate"
+  },
+  "empty": {
+    "title": "No Upstreams Found",
+    "description": "Configure a reverse_proxy handler in your routes to see upstream health here."
+  }
+}

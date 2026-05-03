@@ -6,6 +6,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,8 @@ function generateId(): string {
 }
 
 export function AdvancedMatchersForm({ value, onChange }: AdvancedMatchersFormProps) {
+  const { t } = useTranslation("middleware");
+  const { t: tc } = useTranslation();
   const [headerMatches, setHeaderMatches] = useState<HeaderMatchEntry[]>([]);
   const [queryMatches, setQueryMatches] = useState<QueryMatchEntry[]>([]);
   const [remoteIpRanges, setRemoteIpRanges] = useState("");
@@ -193,26 +196,26 @@ export function AdvancedMatchersForm({ value, onChange }: AdvancedMatchersFormPr
       {/* Header matchers */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold">Header Matchers</Label>
+          <Label className="text-sm font-semibold">{t("matchers.headerMatchers")}</Label>
           <Button type="button" variant="outline" size="sm" onClick={addHeaderMatch}>
             <Plus className="h-3 w-3" />
-            Add
+            {tc("actions.add")}
           </Button>
         </div>
         {headerMatches.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No header matchers configured.</p>
+          <p className="text-xs text-muted-foreground">{t("matchers.noHeaderMatchers")}</p>
         ) : (
           <div className="space-y-2">
             {headerMatches.map((entry) => (
               <div key={entry.id} className="flex gap-2 items-center">
                 <Input
-                  placeholder="Header name"
+                  placeholder={t("matchers.headerName")}
                   className="flex-1"
                   value={entry.name}
                   onChange={(e) => updateHeaderMatch(entry.id, "name", e.target.value)}
                 />
                 <Input
-                  placeholder="Value (or * for any)"
+                  placeholder={t("matchers.headerValue")}
                   className="flex-1"
                   value={entry.value}
                   onChange={(e) => updateHeaderMatch(entry.id, "value", e.target.value)}
@@ -235,26 +238,26 @@ export function AdvancedMatchersForm({ value, onChange }: AdvancedMatchersFormPr
       {/* Query matchers */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold">Query Parameter Matchers</Label>
+          <Label className="text-sm font-semibold">{t("matchers.queryMatchers")}</Label>
           <Button type="button" variant="outline" size="sm" onClick={addQueryMatch}>
             <Plus className="h-3 w-3" />
-            Add
+            {tc("actions.add")}
           </Button>
         </div>
         {queryMatches.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No query parameter matchers configured.</p>
+          <p className="text-xs text-muted-foreground">{t("matchers.noQueryMatchers")}</p>
         ) : (
           <div className="space-y-2">
             {queryMatches.map((entry) => (
               <div key={entry.id} className="flex gap-2 items-center">
                 <Input
-                  placeholder="Parameter name"
+                  placeholder={t("matchers.paramName")}
                   className="flex-1"
                   value={entry.name}
                   onChange={(e) => updateQueryMatch(entry.id, "name", e.target.value)}
                 />
                 <Input
-                  placeholder="Value"
+                  placeholder={t("matchers.paramValue")}
                   className="flex-1"
                   value={entry.value}
                   onChange={(e) => updateQueryMatch(entry.id, "value", e.target.value)}
@@ -276,16 +279,14 @@ export function AdvancedMatchersForm({ value, onChange }: AdvancedMatchersFormPr
 
       {/* Remote IP */}
       <section className="space-y-3">
-        <Label className="text-sm font-semibold">Remote IP</Label>
+        <Label className="text-sm font-semibold">{t("matchers.remoteIp")}</Label>
         <div className="space-y-2">
           <Input
-            placeholder="192.168.1.0/24, 10.0.0.0/8"
+            placeholder={t("matchers.remoteIpPlaceholder")}
             value={remoteIpRanges}
             onChange={(e) => handleIpRangesChange(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground">
-            CIDR ranges (comma-separated). Leave empty to skip IP matching.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("matchers.remoteIpHint")}</p>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -295,7 +296,7 @@ export function AdvancedMatchersForm({ value, onChange }: AdvancedMatchersFormPr
               className="h-4 w-4 rounded border-input"
             />
             <Label htmlFor="ip-forwarded" className="font-normal text-xs">
-              Use X-Forwarded-For header (for proxied requests)
+              {t("matchers.useXForwardedFor")}
             </Label>
           </div>
         </div>
@@ -304,18 +305,16 @@ export function AdvancedMatchersForm({ value, onChange }: AdvancedMatchersFormPr
       {/* Protocol */}
       <section className="space-y-2">
         <Label htmlFor="matcher-protocol" className="text-sm font-semibold">
-          Protocol (optional)
+          {t("matchers.protocol")}
         </Label>
         <Input
           id="matcher-protocol"
-          placeholder="https"
+          placeholder={t("matchers.protocolPlaceholder")}
           value={protocol}
           onChange={(e) => handleProtocolChange(e.target.value)}
           className="max-w-xs"
         />
-        <p className="text-xs text-muted-foreground">
-          Match only requests with this protocol (http or https).
-        </p>
+        <p className="text-xs text-muted-foreground">{t("matchers.protocolHint")}</p>
       </section>
     </div>
   );

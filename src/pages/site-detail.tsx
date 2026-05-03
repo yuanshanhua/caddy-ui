@@ -4,6 +4,7 @@
 
 import { ArrowLeft, GripVertical, Pencil, Plus, Settings, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { RouteFormDialog } from "@/components/sites/route-form-dialog";
@@ -17,6 +18,7 @@ import { useUpdateSite } from "@/hooks/use-sites";
 import type { HttpRoute } from "@/types/http-app";
 
 export function SiteDetailPage() {
+  const { t } = useTranslation("sites");
   const { serverId } = useParams<{ serverId: string }>();
   const navigate = useNavigate();
   const { data: config, isLoading } = useConfig();
@@ -34,7 +36,9 @@ export function SiteDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Loading...</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("loadingSubtitle", { defaultValue: "Loading..." })}
+        </h1>
       </div>
     );
   }
@@ -44,11 +48,13 @@ export function SiteDetailPage() {
       <div className="space-y-6">
         <Button variant="ghost" onClick={() => navigate("/sites")}>
           <ArrowLeft className="h-4 w-4" />
-          Back to Sites
+          {t("backToSites")}
         </Button>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground">Server &quot;{serverId}&quot; not found.</p>
+            <p className="text-muted-foreground">
+              {t("serverNotFound", { serverId: serverId ?? "" })}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -94,11 +100,11 @@ export function SiteDetailPage() {
     const paths = route.match?.flatMap((m) => m.path ?? []) ?? [];
     const handlers = route.handle?.map((h) => h.handler) ?? [];
 
-    let label = "catch-all";
+    let label = t("catchAll");
     if (hosts.length > 0) label = hosts.join(", ");
     else if (paths.length > 0) label = paths.join(", ");
 
-    const sublabel = handlers.join(" → ") || "no handler";
+    const sublabel = handlers.join(" → ") || t("noHandler");
     return { label, sublabel };
   }
 
@@ -112,12 +118,12 @@ export function SiteDetailPage() {
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight font-mono">{serverId}</h1>
           <p className="text-muted-foreground">
-            {server.listen?.join(", ") ?? "No listen address"}
+            {server.listen?.join(", ") ?? t("noListenAddress")}
           </p>
         </div>
         <Button variant="outline" onClick={() => setShowServerEdit(true)}>
           <Settings className="h-4 w-4" />
-          Server Settings
+          {t("serverSettings")}
         </Button>
       </div>
 
@@ -125,7 +131,7 @@ export function SiteDetailPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Listen</CardDescription>
+            <CardDescription>{t("detail.listen")}</CardDescription>
             <CardTitle className="text-base font-mono">
               {server.listen?.join(", ") ?? "none"}
             </CardTitle>
@@ -133,19 +139,19 @@ export function SiteDetailPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>HTTPS</CardDescription>
+            <CardDescription>{t("detail.https")}</CardDescription>
             <CardTitle className="text-base">
               {server.automatic_https?.disable ? (
-                <Badge variant="warning">Disabled</Badge>
+                <Badge variant="warning">{t("detail.httpsDisabled")}</Badge>
               ) : (
-                <Badge variant="success">Automatic</Badge>
+                <Badge variant="success">{t("detail.httpsAutomatic")}</Badge>
               )}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Routes</CardDescription>
+            <CardDescription>{t("detail.routes")}</CardDescription>
             <CardTitle className="text-base">{routes.length}</CardTitle>
           </CardHeader>
         </Card>
@@ -156,24 +162,22 @@ export function SiteDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Routes</CardTitle>
-              <CardDescription>
-                Routes are evaluated in order. First match wins (if terminal).
-              </CardDescription>
+              <CardTitle>{t("detail.routes")}</CardTitle>
+              <CardDescription>{t("detail.routesDescription")}</CardDescription>
             </div>
             <Button onClick={() => setShowRouteForm(true)}>
               <Plus className="h-4 w-4" />
-              Add Route
+              {t("detail.addRoute")}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {routes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
-              <p className="text-muted-foreground">No routes configured</p>
+              <p className="text-muted-foreground">{t("detail.noRoutes")}</p>
               <Button className="mt-3" variant="outline" onClick={() => setShowRouteForm(true)}>
                 <Plus className="h-4 w-4" />
-                Add First Route
+                {t("detail.addFirstRoute")}
               </Button>
             </div>
           ) : (
@@ -192,7 +196,7 @@ export function SiteDetailPage() {
                         <span className="text-sm font-medium truncate">{label}</span>
                         {route.terminal && (
                           <Badge variant="outline" className="text-xs shrink-0">
-                            terminal
+                            {t("terminal")}
                           </Badge>
                         )}
                       </div>
@@ -259,9 +263,9 @@ export function SiteDetailPage() {
         onOpenChange={(open) => {
           if (!open) setDeleteRouteIndex(null);
         }}
-        title="Delete Route"
-        description={`Are you sure you want to delete route #${deleteRouteIndex}? This action cannot be undone.`}
-        confirmLabel="Delete"
+        title={t("detail.deleteRoute.title")}
+        description={t("detail.deleteRoute.description", { index: deleteRouteIndex ?? 0 })}
+        confirmLabel={t("detail.deleteRoute.confirm")}
         onConfirm={handleDeleteRoute}
         loading={deleteRoute.isPending}
       />

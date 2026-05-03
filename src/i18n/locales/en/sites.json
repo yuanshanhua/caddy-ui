@@ -1,0 +1,52 @@
+{
+  "title": "Sites",
+  "subtitle": "Manage your HTTP servers and routes.",
+  "newServer": "New Server",
+  "createFirst": "Create Your First Server",
+  "noServers": "No servers configured",
+  "noServersHint": "Add a server to start serving traffic.",
+  "noListenAddress": "No listen address",
+  "httpsDisabled": "HTTPS disabled",
+  "routeCount": "{{count}} route(s)",
+  "moreRoutes": "... and {{count}} more routes",
+  "catchAll": "catch-all",
+  "noRoutes": "No routes configured",
+  "noHandler": "no handler",
+  "terminal": "terminal",
+  "backToSites": "Back to Sites",
+  "serverNotFound": "Server \"{{serverId}}\" not found.",
+  "serverSettings": "Server Settings",
+  "deleteServer": {
+    "title": "Delete Server",
+    "description": "Are you sure you want to delete server \"{{serverId}}\"? This will remove all its routes and configuration. This action cannot be undone.",
+    "confirm": "Delete"
+  },
+  "detail": {
+    "listen": "Listen",
+    "https": "HTTPS",
+    "httpsAutomatic": "Automatic",
+    "httpsDisabled": "Disabled",
+    "routes": "Routes",
+    "routesDescription": "Routes are evaluated in order. First match wins (if terminal).",
+    "addRoute": "Add Route",
+    "addFirstRoute": "Add First Route",
+    "noRoutes": "No routes configured",
+    "deleteRoute": {
+      "title": "Delete Route",
+      "description": "Are you sure you want to delete route #{{index}}? This action cannot be undone.",
+      "confirm": "Delete"
+    }
+  },
+  "serverForm": {
+    "createTitle": "Create HTTP Server",
+    "editTitle": "Edit Server",
+    "idLabel": "Server ID",
+    "idPlaceholder": "my-server",
+    "idDescription": "A unique identifier for this server.",
+    "listenLabel": "Listen Addresses",
+    "listenPlaceholder": ":443",
+    "listenDescription": "Addresses to listen on (one per line).",
+    "httpsLabel": "Disable Automatic HTTPS",
+    "httpsDescription": "When checked, Caddy will not automatically manage TLS certificates for this server."
+  }
+}

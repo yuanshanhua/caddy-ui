@@ -1,0 +1,26 @@
+{
+  "title": "日志",
+  "subtitle": "配置日志输出、级别和格式。",
+  "loadingSubtitle": "加载日志配置...",
+  "loadError": "加载日志配置失败：{{message}}",
+  "addLog": "添加日志",
+  "addFirstLog": "添加第一条日志",
+  "empty": {
+    "title": "未配置日志",
+    "description": "Caddy 默认输出到 stderr。添加命名日志配置以自定义输出目标、级别和格式。"
+  },
+  "output": {
+    "default": "默认",
+    "stdout": "stdout",
+    "stderr": "stderr",
+    "file": "文件",
+    "discard": "丢弃"
+  },
+  "deleteLog": {
+    "title": "删除日志",
+    "description": "确定要删除 \"{{name}}\" 日志配置吗？此操作无法撤销。",
+    "confirm": "删除"
+  },
+  "include": "包含: {{count}}",
+  "exclude": "排除: {{count}}"
+}

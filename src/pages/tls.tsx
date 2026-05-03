@@ -6,6 +6,7 @@
 
 import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CertificateList } from "@/components/tls/certificate-list";
 import { PolicyFormDialog } from "@/components/tls/policy-form-dialog";
 import { PolicyList } from "@/components/tls/policy-list";
@@ -14,6 +15,7 @@ import { useAddTlsPolicy, useTlsApp, useUpdateTlsPolicy } from "@/hooks/use-tls"
 import type { AutomationPolicy } from "@/types/tls-app";
 
 export function TlsPage() {
+  const { t } = useTranslation("tls");
   const { data: tlsApp, isLoading, isError, error } = useTlsApp();
   const addPolicyMutation = useAddTlsPolicy();
   const updatePolicyMutation = useUpdateTlsPolicy();
@@ -54,8 +56,8 @@ export function TlsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">TLS / Certificates</h1>
-          <p className="text-muted-foreground">Loading TLS configuration...</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("loadingSubtitle")}</p>
         </div>
       </div>
     );
@@ -65,13 +67,13 @@ export function TlsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">TLS / Certificates</h1>
-          <p className="text-muted-foreground">Manage TLS certificates and automation policies.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Card className="border-destructive">
           <CardContent className="pt-6">
             <p className="text-sm text-destructive">
-              Failed to load TLS configuration: {error?.message}
+              {t("loadError", { message: error?.message })}
             </p>
           </CardContent>
         </Card>
@@ -82,18 +84,17 @@ export function TlsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">TLS / Certificates</h1>
-        <p className="text-muted-foreground">Manage TLS certificates and automation policies.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       {noTlsConfigured && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <ShieldCheck className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No TLS Configuration</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("noConfig.title")}</p>
             <p className="text-xs text-muted-foreground mt-1 mb-4 text-center max-w-sm">
-              Caddy automatically manages HTTPS for domains configured in your HTTP servers. Add an
-              automation policy to customize certificate issuance behavior.
+              {t("noConfig.description")}
             </p>
           </CardContent>
         </Card>
@@ -101,13 +102,13 @@ export function TlsPage() {
 
       {!noTlsConfigured && (
         <section>
-          <h2 className="text-lg font-semibold mb-3">Certificates</h2>
+          <h2 className="text-lg font-semibold mb-3">{t("certificates.title")}</h2>
           <CertificateList certificates={tlsApp?.certificates} />
         </section>
       )}
 
       <section>
-        <h2 className="text-lg font-semibold mb-3">Automation Policies</h2>
+        <h2 className="text-lg font-semibold mb-3">{t("policies.title")}</h2>
         <PolicyList policies={policies} onAdd={handleAddPolicy} onEdit={handleEditPolicy} />
       </section>
 

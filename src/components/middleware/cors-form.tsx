@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { HeadersHandler } from "@/types/handlers";
@@ -52,6 +53,7 @@ function parseCorsFromHeaders(handler: HeadersHandler | undefined): {
 }
 
 export function CorsForm({ value, onChange }: CorsFormProps) {
+  const { t } = useTranslation("middleware");
   const [origins, setOrigins] = useState("*");
   const [methods, setMethods] = useState(DEFAULT_METHODS);
   const [headers, setHeaders] = useState(DEFAULT_HEADERS);
@@ -131,32 +133,28 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">
-        Quickly configure CORS response headers. This generates a headers middleware handler.
-      </p>
+      <p className="text-xs text-muted-foreground">{t("cors.description")}</p>
 
       <section className="space-y-2">
         <Label htmlFor="cors-origins" className="text-sm font-semibold">
-          Allowed Origins
+          {t("cors.allowedOrigins")}
         </Label>
         <Input
           id="cors-origins"
-          placeholder="* or https://example.com"
+          placeholder={t("cors.originsPlaceholder")}
           value={origins}
           onChange={(e) => handleOriginsChange(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground">
-          Use * for any origin, or specify exact origins (comma-separated).
-        </p>
+        <p className="text-xs text-muted-foreground">{t("cors.originsHint")}</p>
       </section>
 
       <section className="space-y-2">
         <Label htmlFor="cors-methods" className="text-sm font-semibold">
-          Allowed Methods
+          {t("cors.allowedMethods")}
         </Label>
         <Input
           id="cors-methods"
-          placeholder={DEFAULT_METHODS}
+          placeholder={t("cors.methodsPlaceholder")}
           value={methods}
           onChange={(e) => handleMethodsChange(e.target.value)}
         />
@@ -164,11 +162,11 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
 
       <section className="space-y-2">
         <Label htmlFor="cors-headers" className="text-sm font-semibold">
-          Allowed Headers
+          {t("cors.allowedHeaders")}
         </Label>
         <Input
           id="cors-headers"
-          placeholder={DEFAULT_HEADERS}
+          placeholder={t("cors.headersPlaceholder")}
           value={headers}
           onChange={(e) => handleHeadersChange(e.target.value)}
         />
@@ -176,28 +174,26 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
 
       <section className="space-y-2">
         <Label htmlFor="cors-expose-headers" className="text-sm font-semibold">
-          Expose Headers (optional)
+          {t("cors.exposeHeaders")}
         </Label>
         <Input
           id="cors-expose-headers"
-          placeholder="X-Request-Id, X-Total-Count"
+          placeholder={t("cors.exposeHeadersPlaceholder")}
           value={exposeHeaders}
           onChange={(e) => handleExposeHeadersChange(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground">
-          Headers the client is allowed to access from the response.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("cors.exposeHeadersHint")}</p>
       </section>
 
       <div className="grid grid-cols-2 gap-4">
         <section className="space-y-2">
           <Label htmlFor="cors-max-age" className="text-sm font-semibold">
-            Max Age (seconds)
+            {t("cors.maxAge")}
           </Label>
           <Input
             id="cors-max-age"
             type="number"
-            placeholder="86400"
+            placeholder={t("cors.maxAgePlaceholder")}
             value={maxAge}
             onChange={(e) => handleMaxAgeChange(e.target.value)}
           />
@@ -213,17 +209,14 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
               className="h-4 w-4 rounded border-input"
             />
             <Label htmlFor="cors-credentials" className="font-normal text-sm">
-              Allow Credentials
+              {t("cors.allowCredentials")}
             </Label>
           </div>
         </section>
       </div>
 
       {credentials && origins === "*" && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          Warning: credentials with &quot;*&quot; origin is not allowed by browsers. Specify exact
-          origins instead.
-        </p>
+        <p className="text-xs text-amber-600 dark:text-amber-400">{t("cors.credentialsWarning")}</p>
       )}
     </div>
   );

@@ -1,0 +1,29 @@
+{
+  "title": "上游",
+  "subtitle": "监控反向代理上游健康状态和流量。每 5 秒刷新。",
+  "loadingSubtitle": "加载上游健康状态...",
+  "errorSubtitle": "监控反向代理上游健康状态。",
+  "loadError": "加载上游状态失败：{{message}}",
+  "loadErrorHint": "请确保已配置至少一个 reverse_proxy 处理器。",
+  "summary": {
+    "total": "上游总数",
+    "healthy": "健康",
+    "degradedDown": "异常 / 宕机",
+    "totalRequests": "总请求数"
+  },
+  "status": {
+    "title": "上游状态",
+    "healthy": "健康",
+    "degraded": "异常",
+    "down": "宕机"
+  },
+  "card": {
+    "requests": "请求数",
+    "failures": "失败数",
+    "failRate": "失败率"
+  },
+  "empty": {
+    "title": "未找到上游",
+    "description": "在路由中配置 reverse_proxy 处理器以在此查看上游健康状态。"
+  }
+}

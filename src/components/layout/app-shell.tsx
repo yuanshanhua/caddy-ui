@@ -2,6 +2,8 @@
  * App Shell — the main layout wrapper with sidebar, header, and content area.
  */
 
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui";
@@ -10,6 +12,11 @@ import { Sidebar } from "./sidebar";
 
 export function AppShell() {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.resolvedLanguage ?? "en";
+  }, [i18n.resolvedLanguage]);
 
   return (
     <div className="min-h-screen bg-background">

@@ -13,23 +13,25 @@ import {
   Settings,
   Shield,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui";
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/sites", icon: Globe, label: "Sites" },
-  { to: "/import", icon: FileUp, label: "Import" },
-  { to: "/upstreams", icon: ArrowUpDown, label: "Upstreams" },
-  { to: "/tls", icon: Shield, label: "TLS / Certs" },
-  { to: "/logging", icon: FileText, label: "Logging" },
-  { to: "/templates", icon: LayoutTemplate, label: "Templates" },
-  { to: "/global", icon: Settings, label: "Global Config" },
-  { to: "/config", icon: FileCode, label: "Raw Config" },
+  { to: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
+  { to: "/sites", icon: Globe, labelKey: "nav.sites" },
+  { to: "/import", icon: FileUp, labelKey: "nav.import" },
+  { to: "/upstreams", icon: ArrowUpDown, labelKey: "nav.upstreams" },
+  { to: "/tls", icon: Shield, labelKey: "nav.tls" },
+  { to: "/logging", icon: FileText, labelKey: "nav.logging" },
+  { to: "/templates", icon: LayoutTemplate, labelKey: "nav.templates" },
+  { to: "/global", icon: Settings, labelKey: "nav.globalConfig" },
+  { to: "/config", icon: FileCode, labelKey: "nav.rawConfig" },
 ] as const;
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
 
   return (
@@ -46,7 +48,7 @@ export function Sidebar() {
             <span className="text-sm font-bold text-primary-foreground">C</span>
           </div>
           {!sidebarCollapsed && (
-            <span className="text-lg font-semibold tracking-tight">Caddy UI</span>
+            <span className="text-lg font-semibold tracking-tight">{t("brand")}</span>
           )}
         </div>
       </div>
@@ -70,7 +72,7 @@ export function Sidebar() {
             }
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            {!sidebarCollapsed && <span>{item.label}</span>}
+            {!sidebarCollapsed && <span>{t(item.labelKey)}</span>}
           </NavLink>
         ))}
       </nav>

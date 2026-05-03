@@ -6,6 +6,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +37,7 @@ function isBcryptHash(str: string): boolean {
 }
 
 export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
+  const { t } = useTranslation("middleware");
   const [accounts, setAccounts] = useState<AccountEntry[]>([]);
   const [realm, setRealm] = useState("");
 
@@ -126,34 +128,32 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
       {/* Realm */}
       <section className="space-y-2">
         <Label htmlFor="auth-realm" className="text-sm font-semibold">
-          Realm (optional)
+          {t("basicAuth.realm")}
         </Label>
         <Input
           id="auth-realm"
-          placeholder="Restricted Area"
+          placeholder={t("basicAuth.realmPlaceholder")}
           value={realm}
           onChange={(e) => handleRealmChange(e.target.value)}
           className="max-w-xs"
         />
-        <p className="text-xs text-muted-foreground">
-          Displayed in the browser&apos;s authentication prompt.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("basicAuth.realmHint")}</p>
       </section>
 
       {/* Accounts */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold">Accounts</Label>
+          <Label className="text-sm font-semibold">{t("basicAuth.accounts")}</Label>
           <Button type="button" variant="outline" size="sm" onClick={addAccount}>
             <Plus className="h-3 w-3" />
-            Add Account
+            {t("basicAuth.addAccount")}
           </Button>
         </div>
         <div className="space-y-2">
           {accounts.map((account) => (
             <div key={account.id} className="flex gap-2 items-center">
               <Input
-                placeholder="Username"
+                placeholder={t("basicAuth.username")}
                 className="flex-1"
                 value={account.username}
                 onChange={(e) => updateAccount(account.id, "username", e.target.value)}
@@ -161,7 +161,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
               <div className="flex-1 relative">
                 <Input
                   placeholder={
-                    account.isHashed ? "Bcrypt hash" : "Password (plaintext or bcrypt hash)"
+                    account.isHashed ? t("basicAuth.bcryptHash") : t("basicAuth.password")
                   }
                   className="flex-1"
                   value={account.password}
@@ -170,7 +170,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
                 />
                 {account.isHashed && (
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    hashed
+                    {t("basicAuth.hashed")}
                   </span>
                 )}
               </div>
@@ -186,11 +186,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Passwords should be bcrypt hashes. Use{" "}
-          <code className="bg-muted px-1 rounded">caddy hash-password</code> to generate hashes.
-          Plaintext passwords will NOT work with Caddy directly.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("basicAuth.passwordHint")}</p>
       </section>
     </div>
   );

@@ -6,6 +6,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,8 @@ function generateId(): string {
 }
 
 export function RewriteForm({ value, onChange }: RewriteFormProps) {
+  const { t } = useTranslation("middleware");
+  const { t: tc } = useTranslation();
   const [mode, setMode] = useState<RewriteMode>("uri");
   const [uri, setUri] = useState("");
   const [stripPrefix, setStripPrefix] = useState("");
@@ -178,55 +181,49 @@ export function RewriteForm({ value, onChange }: RewriteFormProps) {
     <div className="space-y-4">
       {/* Rewrite mode */}
       <section className="space-y-2">
-        <Label className="text-sm font-semibold">Rewrite Mode</Label>
+        <Label className="text-sm font-semibold">{t("rewrite.mode")}</Label>
         <Select value={mode} onChange={(e) => handleModeChange(e.target.value as RewriteMode)}>
-          <option value="uri">Full URI replacement</option>
-          <option value="strip_prefix">Strip path prefix</option>
-          <option value="strip_suffix">Strip path suffix</option>
-          <option value="substring">Substring replacement</option>
-          <option value="path_regexp">Path regex replacement</option>
+          <option value="uri">{t("rewrite.fullUri")}</option>
+          <option value="strip_prefix">{t("rewrite.stripPrefix")}</option>
+          <option value="strip_suffix">{t("rewrite.stripSuffix")}</option>
+          <option value="substring">{t("rewrite.substring")}</option>
+          <option value="path_regexp">{t("rewrite.pathRegex")}</option>
         </Select>
       </section>
 
       {/* Mode-specific fields */}
       {mode === "uri" && (
         <section className="space-y-2">
-          <Label htmlFor="rewrite-uri">New URI</Label>
+          <Label htmlFor="rewrite-uri">{t("rewrite.newUri")}</Label>
           <Input
             id="rewrite-uri"
-            placeholder="/new-path{uri}"
+            placeholder={t("rewrite.newUriPlaceholder")}
             value={uri}
             onChange={(e) => handleUriChange(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground">
-            Supports placeholders like <code className="bg-muted px-1 rounded">{"{uri}"}</code>,{" "}
-            <code className="bg-muted px-1 rounded">{"{path}"}</code>,{" "}
-            <code className="bg-muted px-1 rounded">{"{query}"}</code>
-          </p>
+          <p className="text-xs text-muted-foreground">{t("rewrite.newUriHint")}</p>
         </section>
       )}
 
       {mode === "strip_prefix" && (
         <section className="space-y-2">
-          <Label htmlFor="rewrite-strip-prefix">Path Prefix to Strip</Label>
+          <Label htmlFor="rewrite-strip-prefix">{t("rewrite.prefixToStrip")}</Label>
           <Input
             id="rewrite-strip-prefix"
-            placeholder="/api/v1"
+            placeholder={t("rewrite.prefixPlaceholder")}
             value={stripPrefix}
             onChange={(e) => handleStripPrefixChange(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground">
-            Removes this prefix from the request path before passing to the handler.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("rewrite.prefixHint")}</p>
         </section>
       )}
 
       {mode === "strip_suffix" && (
         <section className="space-y-2">
-          <Label htmlFor="rewrite-strip-suffix">Path Suffix to Strip</Label>
+          <Label htmlFor="rewrite-strip-suffix">{t("rewrite.suffixToStrip")}</Label>
           <Input
             id="rewrite-strip-suffix"
-            placeholder=".html"
+            placeholder={t("rewrite.suffixPlaceholder")}
             value={stripSuffix}
             onChange={(e) => handleStripSuffixChange(e.target.value)}
           />
@@ -236,23 +233,23 @@ export function RewriteForm({ value, onChange }: RewriteFormProps) {
       {mode === "substring" && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-semibold">Substring Replacements</Label>
+            <Label className="text-sm font-semibold">{t("rewrite.substringReplacements")}</Label>
             <Button type="button" variant="outline" size="sm" onClick={addSubstring}>
               <Plus className="h-3 w-3" />
-              Add
+              {tc("actions.add")}
             </Button>
           </div>
           {substrings.map((sub) => (
             <div key={sub.id} className="flex gap-2 items-center">
               <Input
-                placeholder="Find"
+                placeholder={t("rewrite.find")}
                 className="flex-1"
                 value={sub.find}
                 onChange={(e) => updateSubstring(sub.id, "find", e.target.value)}
               />
               <span className="text-xs text-muted-foreground shrink-0">→</span>
               <Input
-                placeholder="Replace"
+                placeholder={t("rewrite.replace")}
                 className="flex-1"
                 value={sub.replace}
                 onChange={(e) => updateSubstring(sub.id, "replace", e.target.value)}
@@ -269,9 +266,7 @@ export function RewriteForm({ value, onChange }: RewriteFormProps) {
             </div>
           ))}
           {substrings.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              Click &quot;Add&quot; to add a substring replacement.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("rewrite.noSubstitutions")}</p>
           )}
         </section>
       )}
@@ -279,40 +274,38 @@ export function RewriteForm({ value, onChange }: RewriteFormProps) {
       {mode === "path_regexp" && (
         <section className="space-y-3">
           <div className="space-y-2">
-            <Label htmlFor="rewrite-regexp-find">Regex Pattern</Label>
+            <Label htmlFor="rewrite-regexp-find">{t("rewrite.regexPattern")}</Label>
             <Input
               id="rewrite-regexp-find"
-              placeholder="^/old/(.*)"
+              placeholder={t("rewrite.regexPlaceholder")}
               value={regexpFind}
               onChange={(e) => handleRegexpFindChange(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rewrite-regexp-replace">Replacement</Label>
+            <Label htmlFor="rewrite-regexp-replace">{t("rewrite.replacement")}</Label>
             <Input
               id="rewrite-regexp-replace"
-              placeholder="/new/$1"
+              placeholder={t("rewrite.replacementPlaceholder")}
               value={regexpReplace}
               onChange={(e) => handleRegexpReplaceChange(e.target.value)}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Uses Go regular expression syntax. Capture groups are referenced with $1, $2, etc.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("rewrite.regexHint")}</p>
         </section>
       )}
 
       {/* Method override */}
       <section className="space-y-2">
-        <Label htmlFor="rewrite-method">Method Override (optional)</Label>
+        <Label htmlFor="rewrite-method">{t("rewrite.methodOverride")}</Label>
         <Input
           id="rewrite-method"
-          placeholder="GET"
+          placeholder={t("rewrite.methodPlaceholder")}
           value={method}
           onChange={(e) => handleMethodChange(e.target.value)}
           className="max-w-xs"
         />
-        <p className="text-xs text-muted-foreground">Optionally change the request HTTP method.</p>
+        <p className="text-xs text-muted-foreground">{t("rewrite.methodHint")}</p>
       </section>
     </div>
   );

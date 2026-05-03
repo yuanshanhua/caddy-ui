@@ -44,6 +44,7 @@
 - [ ] ~~Undo/revert last change~~ (deferred — requires IndexedDB snapshots, planned for Phase 4)
 
 ## Phase 4: UX & Editor
+- [x] Internationalization (i18n) with react-i18next (English + Chinese)
 - [ ] Monaco editor integration (JSON + Caddyfile syntax highlighting)
 - [ ] Dark mode support
 - [ ] Config history (IndexedDB snapshots with timestamps)

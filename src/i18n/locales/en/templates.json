@@ -1,0 +1,55 @@
+{
+  "title": "Templates",
+  "subtitle": "Common configuration patterns. Preview and apply to any server.",
+  "category": {
+    "web": "Web",
+    "api": "API",
+    "proxy": "Proxy"
+  },
+  "routeCount": "{{count}} route",
+  "routeCountPlural": "{{count}} routes",
+  "applied": "Applied",
+  "applyTemplate": "Apply",
+  "noServers": "No HTTP servers configured. Create a server first before applying templates.",
+  "preview": {
+    "title": "{{name}}",
+    "subtitle": "JSON config preview"
+  },
+  "confirm": {
+    "title": "Apply \"{{name}}\"",
+    "selectServer": "Select a server to apply {{count}} route(s) to:",
+    "description": "This will add {{count}} route(s) to server \"{{server}}\". You can edit or remove them later.",
+    "confirm": "Apply Template",
+    "targetServer": "Target Server",
+    "selectPlaceholder": "Select a server..."
+  },
+  "success": "Template \"{{name}}\" applied",
+  "successDescription": "{{count}} route(s) added to {{server}}",
+  "error": "Failed to apply template",
+  "templates": {
+    "spa": {
+      "name": "Single Page Application (SPA)",
+      "description": "Serves static files with HTML5 history mode fallback. All non-file paths serve index.html."
+    },
+    "wordpress": {
+      "name": "WordPress / PHP-FPM",
+      "description": "Reverse proxy to a PHP-FPM backend with file server for static assets. Includes common security headers."
+    },
+    "apiGateway": {
+      "name": "API Gateway",
+      "description": "Route API requests to different backends by path prefix. Includes CORS headers, compression, and rate limiting paths."
+    },
+    "loadBalanced": {
+      "name": "Load-Balanced Reverse Proxy",
+      "description": "Proxy all traffic to multiple backends with health checks and round-robin balancing."
+    },
+    "static": {
+      "name": "Static File Server",
+      "description": "Serves static files with compression, browse enabled, and proper cache headers."
+    },
+    "wwwRedirect": {
+      "name": "WWW Redirect",
+      "description": "Redirect all www.example.com traffic to example.com (or vice versa)."
+    }
+  }
+}

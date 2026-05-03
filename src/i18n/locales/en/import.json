@@ -1,0 +1,35 @@
+{
+  "title": "Import Caddyfile",
+  "subtitle": "Convert a Caddyfile to JSON and apply it as the running configuration.",
+  "warning": {
+    "title": "Full Configuration Replacement",
+    "description": "Importing a Caddyfile will <strong>replace the entire running configuration</strong>. All existing servers, routes, and TLS settings will be overwritten."
+  },
+  "caddyfile": {
+    "title": "Caddyfile",
+    "description": "Paste your Caddyfile content or upload a file.",
+    "placeholder": "# Example Caddyfile\nexample.com {\n    reverse_proxy localhost:3000\n}\n\napi.example.com {\n    reverse_proxy localhost:8080\n}",
+    "adaptHint": "Uses Caddy's /adapt endpoint for conversion."
+  },
+  "uploadFile": "Upload File",
+  "converting": "Converting...",
+  "convertPreview": "Convert & Preview",
+  "convertSuccess": "Caddyfile converted successfully",
+  "convertError": "Failed to convert Caddyfile",
+  "jsonPreview": {
+    "title": "JSON Preview",
+    "description": "This is the resulting configuration that will be applied.",
+    "readyBadge": "Ready to Apply"
+  },
+  "applyConfig": "Apply Configuration",
+  "applySuccess": "Configuration applied successfully",
+  "applyError": "Failed to apply configuration",
+  "confirmDialog": {
+    "title": "Replace Entire Configuration?",
+    "description": "This will overwrite the entire running Caddy configuration with the converted Caddyfile. All existing servers, routes, and TLS policies will be replaced. This action cannot be undone.",
+    "confirm": "Apply Configuration"
+  },
+  "warnings": {
+    "title": "Warnings ({{count}})"
+  }
+}

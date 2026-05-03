@@ -6,6 +6,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,6 +87,8 @@ function buildHeaderOps(entries: HeaderEntry[]): HeaderOps | undefined {
 }
 
 export function HeadersForm({ value, onChange }: HeadersFormProps) {
+  const { t } = useTranslation("middleware");
+  const { t: tc } = useTranslation();
   const [requestHeaders, setRequestHeaders] = useState<HeaderEntry[]>([]);
   const [responseHeaders, setResponseHeaders] = useState<HeaderEntry[]>([]);
   const [responseDeferred, setResponseDeferred] = useState(false);
@@ -166,14 +169,16 @@ export function HeadersForm({ value, onChange }: HeadersFormProps) {
       {/* Request Headers */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold">Request Headers</Label>
+          <Label className="text-sm font-semibold">{t("headers.requestHeaders")}</Label>
           <Button type="button" variant="outline" size="sm" onClick={addRequestHeader}>
             <Plus className="h-3 w-3" />
-            Add
+            {tc("actions.add")}
           </Button>
         </div>
         {requestHeaders.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No request header modifications.</p>
+          <p className="text-xs text-muted-foreground">
+            {t("headers.noModifications", { type: "request" })}
+          </p>
         ) : (
           <div className="space-y-2">
             {requestHeaders.map((entry) => (
@@ -183,19 +188,19 @@ export function HeadersForm({ value, onChange }: HeadersFormProps) {
                   value={entry.operation}
                   onChange={(e) => updateRequestHeader(entry.id, "operation", e.target.value)}
                 >
-                  <option value="set">Set</option>
-                  <option value="add">Add</option>
-                  <option value="delete">Delete</option>
+                  <option value="set">{t("headers.set")}</option>
+                  <option value="add">{t("headers.add")}</option>
+                  <option value="delete">{t("headers.delete")}</option>
                 </Select>
                 <Input
-                  placeholder="Header name"
+                  placeholder={t("headers.headerName")}
                   className="flex-1"
                   value={entry.name}
                   onChange={(e) => updateRequestHeader(entry.id, "name", e.target.value)}
                 />
                 {entry.operation !== "delete" && (
                   <Input
-                    placeholder="Value"
+                    placeholder={t("headers.value")}
                     className="flex-1"
                     value={entry.value}
                     onChange={(e) => updateRequestHeader(entry.id, "value", e.target.value)}
@@ -219,14 +224,16 @@ export function HeadersForm({ value, onChange }: HeadersFormProps) {
       {/* Response Headers */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-semibold">Response Headers</Label>
+          <Label className="text-sm font-semibold">{t("headers.responseHeaders")}</Label>
           <Button type="button" variant="outline" size="sm" onClick={addResponseHeader}>
             <Plus className="h-3 w-3" />
-            Add
+            {tc("actions.add")}
           </Button>
         </div>
         {responseHeaders.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No response header modifications.</p>
+          <p className="text-xs text-muted-foreground">
+            {t("headers.noModifications", { type: "response" })}
+          </p>
         ) : (
           <div className="space-y-2">
             {responseHeaders.map((entry) => (
@@ -236,19 +243,19 @@ export function HeadersForm({ value, onChange }: HeadersFormProps) {
                   value={entry.operation}
                   onChange={(e) => updateResponseHeader(entry.id, "operation", e.target.value)}
                 >
-                  <option value="set">Set</option>
-                  <option value="add">Add</option>
-                  <option value="delete">Delete</option>
+                  <option value="set">{t("headers.set")}</option>
+                  <option value="add">{t("headers.add")}</option>
+                  <option value="delete">{t("headers.delete")}</option>
                 </Select>
                 <Input
-                  placeholder="Header name"
+                  placeholder={t("headers.headerName")}
                   className="flex-1"
                   value={entry.name}
                   onChange={(e) => updateResponseHeader(entry.id, "name", e.target.value)}
                 />
                 {entry.operation !== "delete" && (
                   <Input
-                    placeholder="Value"
+                    placeholder={t("headers.value")}
                     className="flex-1"
                     value={entry.value}
                     onChange={(e) => updateResponseHeader(entry.id, "value", e.target.value)}
@@ -276,7 +283,7 @@ export function HeadersForm({ value, onChange }: HeadersFormProps) {
             className="h-4 w-4 rounded border-input"
           />
           <Label htmlFor="resp-deferred" className="font-normal text-xs">
-            Deferred (apply after handler writes response)
+            {t("headers.deferred")}
           </Label>
         </div>
       </section>

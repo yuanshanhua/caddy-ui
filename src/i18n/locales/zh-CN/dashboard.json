@@ -1,0 +1,25 @@
+{
+  "title": "仪表盘",
+  "subtitle": "Caddy 服务器状态概览。",
+  "connection": "连接状态",
+  "httpServers": "HTTP 服务器",
+  "adminApi": "管理 API",
+  "adminApiAt": "管理 API 地址：{{address}}",
+  "listeningOn": "监听地址：{{addresses}}",
+  "noServers": "未配置服务器",
+  "disabled": "已禁用",
+  "originEnforcement": "已启用来源验证",
+  "defaultSecurity": "默认安全策略",
+  "configSummary": {
+    "title": "配置摘要",
+    "subtitle": "当前活跃配置概览",
+    "appsLoaded": "已加载应用",
+    "none": "无",
+    "logging": "日志",
+    "loggerCount": "{{count}} 个日志器",
+    "loggerDefault": "默认",
+    "storage": "存储",
+    "storageDefault": "file_system（默认）",
+    "httpPort": "HTTP 端口"
+  }
+}

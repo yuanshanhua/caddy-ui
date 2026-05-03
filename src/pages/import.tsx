@@ -7,6 +7,7 @@
 
 import { AlertTriangle, FileUp, Play, RotateCcw, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -17,6 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAdaptCaddyfile, useConfigLoad } from "@/hooks/use-config";
 
 export function ImportPage() {
+  const { t } = useTranslation("import");
+  const { t: tc } = useTranslation();
   const [caddyfile, setCaddyfile] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,10 +59,10 @@ export function ImportPage() {
 
     adaptMutation.mutate(caddyfile, {
       onSuccess: () => {
-        toast.success("Caddyfile converted successfully");
+        toast.success(t("convertSuccess"));
       },
       onError: (error) => {
-        toast.error("Failed to convert Caddyfile", {
+        toast.error(t("convertError"), {
           description: error.message,
         });
       },
@@ -71,14 +74,14 @@ export function ImportPage() {
 
     loadMutation.mutate(adaptedConfig, {
       onSuccess: () => {
-        toast.success("Configuration applied successfully");
+        toast.success(t("applySuccess"));
         setConfirmOpen(false);
         setCaddyfile("");
         adaptMutation.reset();
         void navigate("/sites");
       },
       onError: (error) => {
-        toast.error("Failed to apply configuration", {
+        toast.error(t("applyError"), {
           description: error.message,
         });
         setConfirmOpen(false);
@@ -96,16 +99,14 @@ export function ImportPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Import Caddyfile</h1>
-          <p className="text-muted-foreground">
-            Convert a Caddyfile to JSON and apply it as the running configuration.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           {hasContent && (
             <Button variant="outline" size="sm" onClick={handleReset}>
               <RotateCcw className="h-4 w-4" />
-              Reset
+              {tc("actions.reset")}
             </Button>
           )}
         </div>
@@ -115,10 +116,13 @@ export function ImportPage() {
         <CardContent className="flex items-start gap-3 pt-4 pb-4">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-amber-500">Full Configuration Replacement</p>
+            <p className="font-medium text-amber-500">{t("warning.title")}</p>
             <p className="text-muted-foreground mt-1">
-              Importing a Caddyfile will <strong>replace the entire running configuration</strong>.
-              All existing servers, routes, and TLS settings will be overwritten.
+              <Trans
+                i18nKey="warning.description"
+                ns="import"
+                components={{ strong: <strong /> }}
+              />
             </p>
           </div>
         </CardContent>
@@ -128,8 +132,8 @@ export function ImportPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-medium">Caddyfile</CardTitle>
-              <CardDescription>Paste your Caddyfile content or upload a file.</CardDescription>
+              <CardTitle className="text-sm font-medium">{t("caddyfile.title")}</CardTitle>
+              <CardDescription>{t("caddyfile.description")}</CardDescription>
             </div>
             <div>
               <input
@@ -141,7 +145,7 @@ export function ImportPage() {
               />
               <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-4 w-4" />
-                Upload File
+                {t("uploadFile")}
               </Button>
             </div>
           </div>
@@ -149,9 +153,7 @@ export function ImportPage() {
         <CardContent>
           <Textarea
             className="min-h-[300px] font-mono text-sm resize-y"
-            placeholder={
-              "# Example Caddyfile\nexample.com {\n    reverse_proxy localhost:3000\n}\n\napi.example.com {\n    reverse_proxy localhost:8080\n}"
-            }
+            placeholder={t("caddyfile.placeholder")}
             value={caddyfile}
             onChange={(e) => {
               setCaddyfile(e.target.value);
@@ -160,13 +162,10 @@ export function ImportPage() {
             spellCheck={false}
           />
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs text-muted-foreground">
-              Uses Caddy's <code className="text-xs bg-muted px-1 py-0.5 rounded">/adapt</code>{" "}
-              endpoint for conversion.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("caddyfile.adaptHint")}</p>
             <Button onClick={handleConvert} disabled={!hasContent || adaptMutation.isPending}>
               <Play className="h-4 w-4" />
-              {adaptMutation.isPending ? "Converting..." : "Convert & Preview"}
+              {adaptMutation.isPending ? t("converting") : t("convertPreview")}
             </Button>
           </div>
         </CardContent>
@@ -177,7 +176,7 @@ export function ImportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
-              Warnings ({warnings.length})
+              {t("warnings.title", { count: warnings.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -197,12 +196,10 @@ export function ImportPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-medium">JSON Preview</CardTitle>
-                <CardDescription>
-                  This is the resulting configuration that will be applied.
-                </CardDescription>
+                <CardTitle className="text-sm font-medium">{t("jsonPreview.title")}</CardTitle>
+                <CardDescription>{t("jsonPreview.description")}</CardDescription>
               </div>
-              <Badge variant="success">Ready to Apply</Badge>
+              <Badge variant="success">{t("jsonPreview.readyBadge")}</Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -216,7 +213,7 @@ export function ImportPage() {
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <FileUp className="h-4 w-4" />
-                {loadMutation.isPending ? "Applying..." : "Apply Configuration"}
+                {loadMutation.isPending ? tc("status.applying") : t("applyConfig")}
               </Button>
             </div>
           </CardContent>
@@ -226,9 +223,9 @@ export function ImportPage() {
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Replace Entire Configuration?"
-        description="This will overwrite the entire running Caddy configuration with the converted Caddyfile. All existing servers, routes, and TLS policies will be replaced. This action cannot be undone."
-        confirmLabel="Apply Configuration"
+        title={t("confirmDialog.title")}
+        description={t("confirmDialog.description")}
+        confirmLabel={t("confirmDialog.confirm")}
         onConfirm={handleConfirmApply}
         loading={loadMutation.isPending}
         variant="destructive"

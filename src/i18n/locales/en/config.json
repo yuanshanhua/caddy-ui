@@ -1,0 +1,25 @@
+{
+  "rawConfig": {
+    "title": "Raw Configuration",
+    "subtitle": "View and edit the full Caddy JSON configuration.",
+    "jsonTitle": "JSON Configuration",
+    "jsonDescription": "Edit the configuration below and click \"Apply\" to load it via POST /load.",
+    "unsavedChanges": "Unsaved changes",
+    "loadError": "Failed to load: {{message}}",
+    "applyError": "Failed to apply config: {{message}}",
+    "adminWarning": {
+      "title": "Admin API configuration changed",
+      "description": "Modifying the admin section may cause this UI to lose connectivity. If you change the admin listen address or disable the API, the panel will not be able to communicate with Caddy until the configuration is corrected manually."
+    }
+  },
+  "globalConfig": {
+    "title": "Global Configuration",
+    "subtitle": "Configure admin API, logging, storage, and other global settings.",
+    "comingSoon": "Coming Soon",
+    "comingSoonDescription": "This feature is planned for a future release."
+  },
+  "notFound": {
+    "title": "404",
+    "description": "Page not found"
+  }
+}
