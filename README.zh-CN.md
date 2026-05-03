@@ -22,110 +22,58 @@
 
 ## 快速开始
 
-### 前置条件
+### 一键部署
 
-- [Caddy](https://caddyserver.com/docs/install) v2.7+
-- [Node.js](https://nodejs.org/) 22+ 和 [pnpm](https://pnpm.io/)（用于构建）
-
-### 构建
+在服务器上部署 Caddy UI 的最快方式：
 
 ```bash
-git clone https://github.com/yuanshanhua/caddy-ui.git
-cd caddy-ui
-pnpm install
-pnpm build
+curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh -o deploy.sh && bash deploy.sh
 ```
 
-### 部署
+脚本将会：
+1. 检查已安装 Caddy v2.7+
+2. 询问你的域名、用户名和密码
+3. 从 GitHub Releases 下载最新的预构建 UI
+4. 生成带 BasicAuth + 自动 HTTPS 的安全 Caddyfile
+5. 自动完成所有部署
 
-将 `dist/` 目录复制到你的服务器，然后添加到 Caddyfile：
+### 手动部署
 
-```caddyfile
-{
-  admin localhost:2019
-}
+如需手动部署，参见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 获取详细步骤。
 
-your-domain.com {
-  # UI 静态文件（密码保护）
-  handle /ui/* {
-    basicauth {
-      # 生成命令: caddy hash-password
-      admin $2a$14$YOUR_BCRYPT_HASH
-    }
-    uri strip_prefix /ui
-    file_server {
-      root /path/to/caddy-ui/dist
-      try_files {path} /index.html
-    }
-  }
+### 更新
 
-  # 代理 API 请求到 Admin API
-  handle /ui/api/* {
-    basicauth {
-      admin $2a$14$YOUR_BCRYPT_HASH
-    }
-    uri strip_prefix /ui/api
-    reverse_proxy localhost:2019
-  }
-}
-```
-
-重载 Caddy 后访问 `https://your-domain.com/ui/`。
-
-### 本地开发
-
-```bash
-# 启动 Vite 开发服务器（自动代理 API 到 localhost:2019）
-pnpm dev
-
-# 在另一个终端启动 Caddy
-caddy run --config Caddyfile.dev
-```
-
-## 架构
-
-```
-浏览器 → Caddy (:443)
-             ├── /ui/*          → file_server（SPA 静态文件）
-             ├── /ui/api/*      → reverse_proxy localhost:2019（Admin API）
-             └── /*             → 你的正常站点路由
-```
-
-- SPA 通过 Caddy 的 Admin API 完成所有操作
-- 认证由 Caddy 的 `basicauth` 中间件处理
-- Admin API 仅监听 localhost — 不直接暴露
-- 同源部署消除了 CORS 问题
-
-## 技术栈
-
-| 层级 | 技术 |
-|------|------|
-| 框架 | React 19 + Vite 8 |
-| 语言 | TypeScript 6（strict 模式，零 `any`） |
-| 样式 | Tailwind CSS 4 |
-| 组件 | shadcn/ui 模式 |
-| 服务端状态 | TanStack Query v5 |
-| 客户端状态 | Zustand v5 |
-| 路由 | React Router v7 |
-| 代码检查 | Biome |
+再次运行部署脚本即可 — 它会检测到已有安装，并提供仅更新静态文件的选项，不会修改你的配置。
 
 ## 安全性
 
-- UI **没有认证逻辑** — Caddy 的 `basicauth` 保护 `/ui/` 路由
-- Admin API 在 `localhost:2019` 运行，不会直接暴露
-- 所有 API 访问通过 Caddy 的反向代理（同源）
-- 建议添加 IP 限制以增强安全性
+> **HTTPS 是必需的。** Caddy UI 完全依赖 Caddy 的强制 HTTPS 来保护传输中的凭据。永远不要在纯 HTTP 连接上部署 Caddy UI。
 
-## 与替代方案的对比
+安全模型简洁而稳健：
 
-| | Caddy UI | CaddyManager | Nginx Proxy Manager |
-|---|---------|--------------|-------------------|
-| 需要后端 | 否 | 是 (Express.js) | 是 (Node.js) |
-| 需要数据库 | 否 | 是 (SQLite/MongoDB) | 是 (SQLite) |
-| 安装方式 | 复制静态文件 | Docker/npm | Docker |
-| 配置透明度 | 完全（可访问原始 JSON） | 部分 | 低 |
-| Caddy 版本耦合 | 无 | 紧耦合 | 不适用 (Nginx) |
-| 升级方式 | 替换文件（零停机） | 重建容器 | 重建容器 |
+- **HTTPS 强制** — 在 Caddyfile 中使用域名会触发 Caddy 的自动 TLS。这是保护 BasicAuth 凭据不被窃听的首要安全层。
+- **BasicAuth + bcrypt** — Caddy 的 `basicauth` 中间件保护 `/ui/` 和 `/ui/api/` 两个路径。密码以 bcrypt 哈希存储，绝不以明文形式保存。
+- **Admin API 隔离** — Admin API 仅绑定到 `localhost:2019`，永远不直接暴露到互联网。所有访问都通过 Caddy 的认证反向代理。
+- **无自定义认证代码** — UI 本身没有任何认证逻辑。安全性完全委托给 Caddy 经过实战检验的中间件。
+- **建议 IP 限制** — 如需额外加固，可在 Caddyfile 中按来源 IP 限制访问。
+
+**重要提示：** 如果你无法使用 HTTPS（例如，内网环境没有域名），请理解你的凭据将以明文传输。在这种情况下，请确保网络完全可信或使用 VPN。
+
+## 开发
+
+```bash
+pnpm install
+pnpm dev              # Vite 开发服务器，自动代理 API 到 localhost:2019
+
+# 在另一个终端：
+caddy run --config Caddyfile.dev
+```
+
+关于架构细节、编码规范和贡献指南，请参见：
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 设计决策与数据流
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — 完整部署指南（手动、Docker）
+- [docs/ROADMAP.md](docs/ROADMAP.md) — 规划功能
 
 ## 许可证
 
@@ -135,8 +83,7 @@ MIT
 
 欢迎贡献！请确保：
 
-1. `pnpm typecheck` 通过，零错误
-2. `pnpm lint` 通过
-3. `pnpm build` 成功
+1. `pnpm check` 通过（lint + typecheck + i18n）
+2. `pnpm build` 成功
 
-参见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 了解设计决策，[docs/ROADMAP.md](docs/ROADMAP.md) 了解规划的功能。
+参见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 了解设计决策和编码规范。

@@ -22,110 +22,58 @@ A lightweight, pure static web interface for managing [Caddy](https://caddyserve
 
 ## Quick Start
 
-### Prerequisites
+### One-Line Deploy
 
-- [Caddy](https://caddyserver.com/docs/install) v2.7+
-- [Node.js](https://nodejs.org/) 22+ and [pnpm](https://pnpm.io/) (for building)
-
-### Build
+The fastest way to deploy Caddy UI on your server:
 
 ```bash
-git clone https://github.com/yuanshanhua/caddy-ui.git
-cd caddy-ui
-pnpm install
-pnpm build
+curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh -o deploy.sh && bash deploy.sh
 ```
 
-### Deploy
+The script will:
+1. Check that Caddy v2.7+ is installed
+2. Ask for your domain, username, and password
+3. Download the latest pre-built UI from GitHub Releases
+4. Generate a secure Caddyfile with BasicAuth + auto-HTTPS
+5. Deploy everything automatically
 
-Copy the `dist/` folder to your server, then add to your Caddyfile:
+### Manual Deploy
 
-```caddyfile
-{
-  admin localhost:2019
-}
+If you prefer manual setup, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for step-by-step instructions.
 
-your-domain.com {
-  # UI static files (password-protected)
-  handle /ui/* {
-    basicauth {
-      # Generate: caddy hash-password
-      admin $2a$14$YOUR_BCRYPT_HASH
-    }
-    uri strip_prefix /ui
-    file_server {
-      root /path/to/caddy-ui/dist
-      try_files {path} /index.html
-    }
-  }
+### Updating
 
-  # Proxy API requests to Admin API
-  handle /ui/api/* {
-    basicauth {
-      admin $2a$14$YOUR_BCRYPT_HASH
-    }
-    uri strip_prefix /ui/api
-    reverse_proxy localhost:2019
-  }
-}
-```
-
-Then reload Caddy and visit `https://your-domain.com/ui/`.
-
-### Development
-
-```bash
-# Start Vite dev server (with API proxy to localhost:2019)
-pnpm dev
-
-# In another terminal, start Caddy with the dev config
-caddy run --config Caddyfile.dev
-```
-
-## Architecture
-
-```
-Browser → Caddy (:443)
-             ├── /ui/*          → file_server (SPA static files)
-             ├── /ui/api/*      → reverse_proxy localhost:2019 (Admin API)
-             └── /*             → your normal site routes
-```
-
-- The SPA calls Caddy's Admin API for all operations
-- Authentication is handled by Caddy's `basicauth` middleware
-- Admin API stays on localhost — never exposed directly
-- Same-origin deployment eliminates CORS issues
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Framework | React 19 + Vite 8 |
-| Language | TypeScript 6 (strict, zero `any`) |
-| Styling | Tailwind CSS 4 |
-| Components | shadcn/ui pattern |
-| Server State | TanStack Query v5 |
-| Client State | Zustand v5 |
-| Routing | React Router v7 |
-| Linting | Biome |
+Run the deploy script again — it will detect the existing installation and offer to update the static files only, without touching your configuration.
 
 ## Security
 
-- The UI has **no authentication logic** — Caddy's `basicauth` protects the `/ui/` route
-- Admin API runs on `localhost:2019` and is never directly exposed
-- All API access goes through Caddy's reverse proxy (same-origin)
-- Consider adding IP restrictions for additional security
+> **HTTPS is mandatory.** Caddy UI relies entirely on Caddy's forced HTTPS to protect credentials in transit. Never deploy Caddy UI on a plain HTTP connection.
 
-## Comparison with Alternatives
+The security model is simple and robust:
 
-| | Caddy UI | CaddyManager | Nginx Proxy Manager |
-|---|---------|--------------|-------------------|
-| Backend required | No | Yes (Express.js) | Yes (Node.js) |
-| Database required | No | Yes (SQLite/MongoDB) | Yes (SQLite) |
-| Install method | Copy static files | Docker/npm | Docker |
-| Config transparency | Full (raw JSON access) | Partial | Low |
-| Caddy version coupling | None | Tight | N/A (Nginx) |
-| Upgrade process | Replace files (zero downtime) | Rebuild container | Rebuild container |
+- **HTTPS enforced** — Using a domain name in your Caddyfile triggers Caddy's automatic TLS. This is the primary security layer protecting your BasicAuth credentials from being intercepted.
+- **BasicAuth with bcrypt** — Caddy's `basicauth` middleware protects both `/ui/` and `/ui/api/` paths. Passwords are stored as bcrypt hashes, never in plaintext.
+- **Admin API isolation** — The Admin API binds to `localhost:2019` only and is never directly exposed to the internet. All access goes through Caddy's authenticated reverse proxy.
+- **No custom auth code** — The UI has zero authentication logic of its own. Security is delegated entirely to Caddy's battle-tested middleware.
+- **Consider IP restrictions** — For additional hardening, restrict access by source IP in your Caddyfile.
+
+**Important:** If you cannot use HTTPS (e.g., internal network without a domain), understand that your credentials will be transmitted in plaintext. In this case, ensure the network is fully trusted or use a VPN.
+
+## Development
+
+```bash
+pnpm install
+pnpm dev              # Vite dev server with API proxy to localhost:2019
+
+# In another terminal:
+caddy run --config Caddyfile.dev
+```
+
+For architecture details, coding conventions, and contribution guidelines, see:
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Design decisions and data flow
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Full deployment guide (manual, Docker)
+- [docs/ROADMAP.md](docs/ROADMAP.md) — Planned features
 
 ## License
 
@@ -135,8 +83,7 @@ MIT
 
 Contributions are welcome! Please ensure:
 
-1. `pnpm typecheck` passes with zero errors
-2. `pnpm lint` passes
-3. `pnpm build` succeeds
+1. `pnpm check` passes (lint + typecheck + i18n)
+2. `pnpm build` succeeds
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design decisions and [docs/ROADMAP.md](docs/ROADMAP.md) for planned features.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for design decisions and coding conventions.
