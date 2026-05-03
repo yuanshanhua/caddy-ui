@@ -11,7 +11,12 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowLeft, GripVertical, Pencil, Plus, Settings, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -56,6 +61,7 @@ function SortableRouteItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : undefined,
   };
 
   return (
@@ -63,7 +69,7 @@ function SortableRouteItem({
       ref={setNodeRef}
       style={style}
       className={`group flex items-center gap-3 rounded-md border px-3 py-3 hover:bg-accent/50 transition-colors ${
-        isDragging ? "opacity-50 shadow-lg z-10 bg-accent" : ""
+        isDragging ? "shadow-lg z-10 bg-accent" : ""
       }`}
     >
       <button
@@ -159,8 +165,12 @@ export function SiteDetailPage() {
   }
   const routes = server.routes ?? [];
 
+  // Local optimistic route order for smooth drag-and-drop
+  const [optimisticRoutes, setOptimisticRoutes] = useState<HttpRoute[] | null>(null);
+  const displayRoutes = optimisticRoutes ?? routes;
+
   // Generate stable sortable IDs for routes
-  const routeIds = routes.map((route, idx) => route["@id"] ?? `route-${idx}`);
+  const routeIds = displayRoutes.map((route, idx) => route["@id"] ?? `route-${idx}`);
 
   function handleServerUpdate(id: string, updatedServer: typeof server) {
     updateSite.mutate(
@@ -198,12 +208,19 @@ export function SiteDetailPage() {
     const newIndex = routeIds.indexOf(String(over.id));
     if (oldIndex === -1 || newIndex === -1) return;
 
-    const reordered = [...routes];
-    const [moved] = reordered.splice(oldIndex, 1);
-    if (moved) {
-      reordered.splice(newIndex, 0, moved);
-      reorderRoutes.mutate({ serverId, routes: reordered });
-    }
+    // Optimistically reorder locally (instant, no animation flicker)
+    const reordered = arrayMove(displayRoutes, oldIndex, newIndex);
+    setOptimisticRoutes(reordered);
+
+    // Persist to server, clear optimistic state when server confirms
+    reorderRoutes.mutate(
+      { serverId, routes: reordered },
+      {
+        onSettled: () => {
+          setOptimisticRoutes(null);
+        },
+      },
+    );
   }
 
   function getRouteDescription(route: HttpRoute): { label: string; sublabel: string } {
@@ -283,7 +300,7 @@ export function SiteDetailPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {routes.length === 0 ? (
+          {displayRoutes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <p className="text-muted-foreground">{t("detail.noRoutes")}</p>
               <Button className="mt-3" variant="outline" onClick={() => setShowRouteForm(true)}>
@@ -299,7 +316,7 @@ export function SiteDetailPage() {
             >
               <SortableContext items={routeIds} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
-                  {routes.map((route, idx) => {
+                  {displayRoutes.map((route, idx) => {
                     const { label, sublabel } = getRouteDescription(route);
                     const id = routeIds[idx] ?? `route-${idx}`;
                     return (
