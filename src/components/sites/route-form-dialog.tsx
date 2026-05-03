@@ -9,7 +9,7 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, ChevronRight, Settings2 } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,7 @@ import { CorsForm } from "@/components/middleware/cors-form";
 import { EncodeForm } from "@/components/middleware/encode-form";
 import { HeadersForm } from "@/components/middleware/headers-form";
 import { RewriteForm } from "@/components/middleware/rewrite-form";
-import { ReverseProxyFormDialog } from "@/components/proxy/reverse-proxy-form-dialog";
+import { ReverseProxyForm } from "@/components/proxy/reverse-proxy-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -63,7 +63,6 @@ function parseInitialFormValues(route: HttpRoute | undefined): RouteFormValues {
   const handlers = route.handle ?? [];
 
   let handlerType: HandlerType = "reverse_proxy";
-  let proxyUpstreams = "localhost:3000";
   let fileRoot = "";
   let staticBody = "";
   let staticStatus = "200";
@@ -73,8 +72,6 @@ function parseInitialFormValues(route: HttpRoute | undefined): RouteFormValues {
   for (const handler of handlers) {
     if (handler.handler === "reverse_proxy") {
       handlerType = "reverse_proxy";
-      const rp = handler as ReverseProxyHandler;
-      proxyUpstreams = rp.upstreams?.map((u) => u.dial ?? "").join(", ") ?? "";
     } else if (handler.handler === "file_server") {
       handlerType = "file_server";
       const fs = handler as { root?: string };
@@ -102,7 +99,6 @@ function parseInitialFormValues(route: HttpRoute | undefined): RouteFormValues {
     paths: firstMatch?.path?.join(", ") ?? "",
     methods: firstMatch?.method?.join(", ") ?? "",
     handlerType,
-    proxyUpstreams,
     fileRoot,
     staticBody,
     staticStatus,
@@ -167,7 +163,7 @@ export function RouteFormDialog({
   const [showAdvancedMatchers, setShowAdvancedMatchers] = useState(false);
   const [advancedMatcher, setAdvancedMatcher] = useState<Partial<RequestMatcher>>({});
   const [reverseProxyHandler, setReverseProxyHandler] = useState<ReverseProxyHandler | undefined>();
-  const [showProxyAdvanced, setShowProxyAdvanced] = useState(false);
+  const [showProxyConfig, setShowProxyConfig] = useState(false);
   const [enabledMiddleware, setEnabledMiddleware] = useState<Set<MiddlewareType>>(new Set());
   const [headersHandler, setHeadersHandler] = useState<HeadersHandler | undefined>();
   const [encodeHandler, setEncodeHandler] = useState<EncodeHandler | undefined>();
@@ -213,10 +209,8 @@ export function RouteFormDialog({
       const enabled = new Set<MiddlewareType>();
       for (const handler of handlers) {
         if (handler.handler === "reverse_proxy") {
-          const rp = handler as ReverseProxyHandler;
-          const hasAdv =
-            !!rp.load_balancing || !!rp.health_checks || !!rp.transport || !!rp.headers;
-          setReverseProxyHandler(hasAdv ? rp : undefined);
+          setReverseProxyHandler(handler as ReverseProxyHandler);
+          setShowProxyConfig(true);
         } else if (handler.handler === "headers") {
           const hdrHandler = handler as HeadersHandler;
           const responseSet = hdrHandler.response?.set;
@@ -242,8 +236,8 @@ export function RouteFormDialog({
     } else {
       setShowAdvancedMatchers(false);
       setAdvancedMatcher({});
-      setReverseProxyHandler(undefined);
-      setShowProxyAdvanced(false);
+      setReverseProxyHandler({ handler: "reverse_proxy", upstreams: [{ dial: "localhost:3000" }] });
+      setShowProxyConfig(true);
       setEnabledMiddleware(new Set());
       setHeadersHandler(undefined);
       setEncodeHandler(undefined);
@@ -313,15 +307,13 @@ export function RouteFormDialog({
 
     switch (values.handlerType) {
       case "reverse_proxy": {
-        const upstreams = values.proxyUpstreams
-          .split(",")
-          .map((u) => u.trim())
-          .filter(Boolean)
-          .map((dial) => ({ dial }));
         if (reverseProxyHandler) {
-          handlers.push({ ...reverseProxyHandler, upstreams });
+          handlers.push(reverseProxyHandler);
         } else {
-          handlers.push({ handler: "reverse_proxy" as const, upstreams });
+          handlers.push({
+            handler: "reverse_proxy" as const,
+            upstreams: [{ dial: "localhost:3000" }],
+          });
         }
         break;
       }
@@ -565,63 +557,27 @@ export function RouteFormDialog({
                 />
 
                 {handlerType === "reverse_proxy" && (
-                  <div className="space-y-2">
-                    <FormField
-                      control={form.control}
-                      name="proxyUpstreams"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <Label htmlFor="upstreams">{t("routeForm.upstreams")}</Label>
-                          <FormControl>
-                            <Input
-                              id="upstreams"
-                              placeholder={t("routeForm.upstreamsPlaceholder")}
-                              {...field}
-                            />
-                          </FormControl>
-                          <p className="text-xs text-muted-foreground">
-                            {t("routeForm.upstreamsHint")}
-                          </p>
-                        </FormItem>
+                  <div className="border rounded-md">
+                    <button
+                      type="button"
+                      className="flex items-center justify-between w-full px-3 py-2"
+                      onClick={() => setShowProxyConfig(!showProxyConfig)}
+                    >
+                      <span className="text-sm font-medium">{t("reverseProxy.title")}</span>
+                      {showProxyConfig ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowProxyAdvanced(true)}
-                      >
-                        <Settings2 className="h-3.5 w-3.5 mr-1.5" />
-                        {t("routeForm.proxyAdvanced")}
-                      </Button>
-                      {reverseProxyHandler && (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                          {t("routeForm.proxyAdvancedConfigured")}
-                        </span>
-                      )}
-                    </div>
-                    <ReverseProxyFormDialog
-                      open={showProxyAdvanced}
-                      onOpenChange={setShowProxyAdvanced}
-                      initialHandler={
-                        reverseProxyHandler ?? {
-                          handler: "reverse_proxy",
-                          upstreams: form
-                            .getValues("proxyUpstreams")
-                            .split(",")
-                            .map((u) => u.trim())
-                            .filter(Boolean)
-                            .map((dial) => ({ dial })),
-                        }
-                      }
-                      onSubmit={(handler) => {
-                        setReverseProxyHandler(handler);
-                        const ups = handler.upstreams?.map((u) => u.dial ?? "").join(", ") ?? "";
-                        form.setValue("proxyUpstreams", ups);
-                        setShowProxyAdvanced(false);
-                      }}
-                    />
+                    </button>
+                    {showProxyConfig && (
+                      <div className="px-3 pb-3 pt-1 border-t">
+                        <ReverseProxyForm
+                          value={reverseProxyHandler}
+                          onChange={setReverseProxyHandler}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 

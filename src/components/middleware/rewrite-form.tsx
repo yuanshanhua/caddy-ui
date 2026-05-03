@@ -6,7 +6,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,13 @@ export function RewriteForm({ value, onChange }: RewriteFormProps) {
     name: "substrings",
   });
 
+  // Sync external value changes (skip when change originated from this form)
+  const isInternalChange = useRef(false);
   useEffect(() => {
+    if (isInternalChange.current) {
+      isInternalChange.current = false;
+      return;
+    }
     if (value) {
       form.reset(parseInitialValues(value));
     }
@@ -116,6 +122,7 @@ export function RewriteForm({ value, onChange }: RewriteFormProps) {
   const mode = form.watch("mode");
 
   function emitChange() {
+    isInternalChange.current = true;
     const values = form.getValues();
     onChange(toHandler(values));
   }

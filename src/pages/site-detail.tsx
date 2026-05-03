@@ -248,6 +248,7 @@ export function SiteDetailPage() {
 
       {/* Edit Route Dialog */}
       <RouteFormDialog
+        key={editingRouteIndex !== null ? `edit-${editingRouteIndex}` : "closed"}
         open={editingRouteIndex !== null}
         onOpenChange={(open) => {
           if (!open) setEditingRouteIndex(null);

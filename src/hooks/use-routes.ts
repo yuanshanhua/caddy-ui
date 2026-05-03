@@ -36,7 +36,7 @@ export function useUpdateRoute() {
       index: number;
       route: HttpRoute;
     }) => {
-      await configApi.put(`apps/http/servers/${serverId}/routes/${index}`, route);
+      await configApi.patch(`apps/http/servers/${serverId}/routes/${index}`, route);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: configKeys.all });

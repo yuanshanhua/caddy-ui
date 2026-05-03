@@ -5,7 +5,7 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -70,7 +70,13 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
     defaultValues: parseCorsFromHeaders(value),
   });
 
+  // Sync external value changes (skip when change originated from this form)
+  const isInternalChange = useRef(false);
   useEffect(() => {
+    if (isInternalChange.current) {
+      isInternalChange.current = false;
+      return;
+    }
     form.reset(parseCorsFromHeaders(value));
   }, [value, form]);
 
@@ -78,6 +84,7 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
   const origins = form.watch("origins");
 
   function emitChange() {
+    isInternalChange.current = true;
     const values = form.getValues();
     onChange(toHandler(values));
   }
