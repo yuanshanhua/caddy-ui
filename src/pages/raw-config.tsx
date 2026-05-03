@@ -2,12 +2,25 @@
  * Raw Config page — full JSON editor for the Caddy configuration.
  */
 
-import { Copy, RotateCcw, Save } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, Copy, RotateCcw, Save } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfig, useConfigLoad } from "@/hooks/use-config";
+
+/**
+ * Detect if the admin section was changed between original and edited config.
+ */
+function hasAdminChanges(original: string, edited: string): boolean {
+  try {
+    const orig = JSON.parse(original) as Record<string, unknown>;
+    const edit = JSON.parse(edited) as Record<string, unknown>;
+    return JSON.stringify(orig["admin"]) !== JSON.stringify(edit["admin"]);
+  } catch {
+    return false;
+  }
+}
 
 export function RawConfigPage() {
   const { data: config, isLoading, isError, error } = useConfig();
@@ -18,6 +31,11 @@ export function RawConfigPage() {
   const currentJson = config ? JSON.stringify(config, null, 2) : "";
   const displayJson = editedJson ?? currentJson;
   const hasChanges = editedJson !== null && editedJson !== currentJson;
+
+  const adminChanged = useMemo(
+    () => hasChanges && !parseError && hasAdminChanges(currentJson, editedJson ?? ""),
+    [hasChanges, parseError, currentJson, editedJson],
+  );
 
   function handleChange(value: string) {
     setEditedJson(value);
@@ -114,6 +132,27 @@ export function RawConfigPage() {
         </Card>
       )}
 
+      {adminChanged && (
+        <Card className="border-amber-500/50">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                  Admin API configuration changed
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Modifying the <code className="bg-muted px-1 rounded">admin</code> section may
+                  cause this UI to lose connectivity. If you change the admin listen address or
+                  disable the API, the panel will not be able to communicate with Caddy until the
+                  configuration is corrected manually.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {loadMutation.isError && (
         <Card className="border-destructive">
           <CardContent className="pt-4 pb-4">
@@ -128,7 +167,7 @@ export function RawConfigPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium">JSON Configuration</CardTitle>
           <CardDescription>
-            This is the live configuration. Changes are applied immediately via POST /load.
+            Edit the configuration below and click &quot;Apply&quot; to load it via POST /load.
           </CardDescription>
         </CardHeader>
         <CardContent>
