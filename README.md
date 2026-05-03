@@ -2,8 +2,6 @@
 
 A lightweight, pure static web interface for managing [Caddy](https://caddyserver.com) web server through its Admin API.
 
-**No backend. No database. No plugin. Just a static SPA that talks directly to Caddy.**
-
 ## Features
 
 - **Zero Backend** — The UI is a static SPA; Caddy's own config is the single source of truth
@@ -31,6 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.
 ```
 
 The script will:
+
 1. Check that Caddy v2.7+ is installed
 2. Ask for your domain, username, and password
 3. Download the latest pre-built UI from GitHub Releases
@@ -57,12 +56,13 @@ The security model is simple and robust:
 - **No custom auth code** — The UI has zero authentication logic of its own. Security is delegated entirely to Caddy's battle-tested middleware.
 - **Consider IP restrictions** — For additional hardening, restrict access by source IP in your Caddyfile.
 
-**Important:** If you cannot use HTTPS (e.g., internal network without a domain), understand that your credentials will be transmitted in plaintext. In this case, ensure the network is fully trusted or use a VPN.
+**Important:** If you cannot use HTTPS (e.g., internal network without a domain), your credentials will be transmitted in plaintext. In this case, ensure the network is fully trusted or use a VPN.
 
 ## Development
 
 ```bash
-pnpm install
+git clone https://github.com/yuanshanhua/caddy-ui && cd caddy-ui
+pnpm i
 pnpm dev              # Vite dev server with API proxy to localhost:2019
 
 # In another terminal:

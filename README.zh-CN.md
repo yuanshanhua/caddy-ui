@@ -2,8 +2,6 @@
 
 一个轻量级、纯静态的 Web 管理界面，通过 Admin API 管理 [Caddy](https://caddyserver.com) Web 服务器。
 
-**无后端。无数据库。无插件。仅一个静态 SPA，直接与 Caddy 通信。**
-
 ## 功能特点
 
 - **零后端** — UI 是纯静态 SPA；Caddy 的配置就是唯一的数据源
@@ -31,6 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.
 ```
 
 脚本将会：
+
 1. 检查已安装 Caddy v2.7+
 2. 询问你的域名、用户名和密码
 3. 从 GitHub Releases 下载最新的预构建 UI
@@ -57,12 +56,13 @@ curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.
 - **无自定义认证代码** — UI 本身没有任何认证逻辑。安全性完全委托给 Caddy 经过实战检验的中间件。
 - **建议 IP 限制** — 如需额外加固，可在 Caddyfile 中按来源 IP 限制访问。
 
-**重要提示：** 如果你无法使用 HTTPS（例如，内网环境没有域名），请理解你的凭据将以明文传输。在这种情况下，请确保网络完全可信或使用 VPN。
+**重要提示：** 如果无法使用 HTTPS（例如，内网环境没有域名），你的凭据将以明文传输。在这种情况下，请确保网络完全可信或使用 VPN。
 
 ## 开发
 
 ```bash
-pnpm install
+git clone https://github.com/yuanshanhua/caddy-ui && cd caddy-ui
+pnpm i
 pnpm dev              # Vite 开发服务器，自动代理 API 到 localhost:2019
 
 # 在另一个终端：
