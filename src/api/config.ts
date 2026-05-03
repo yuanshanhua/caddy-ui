@@ -19,6 +19,17 @@ export const configApi = {
   },
 
   /**
+   * Append a value to an array at the given config path.
+   * Uses POST semantics — Caddy appends to the existing array.
+   */
+  post: <T>(path: string, value: T): Promise<void> => {
+    return request<void>(`/config/${path}`, {
+      method: "POST",
+      body: value,
+    });
+  },
+
+  /**
    * Replace (overwrite) the config at the given path.
    * Uses PUT semantics — the value completely replaces whatever was there.
    */

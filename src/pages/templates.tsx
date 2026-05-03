@@ -7,6 +7,7 @@
 
 import { Check, Copy, FileCode2, Globe, Network, Server } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,14 +70,22 @@ export function TemplatesPage() {
   async function handleApply() {
     if (!selectedTemplate || !targetServer) return;
 
-    // Add each route from the template to the target server
-    for (const route of selectedTemplate.routes) {
-      await addRoute.mutateAsync({ serverId: targetServer, route });
-    }
+    try {
+      // Add each route from the template to the target server
+      for (const route of selectedTemplate.routes) {
+        await addRoute.mutateAsync({ serverId: targetServer, route });
+      }
 
-    setAppliedId(selectedTemplate.id);
-    setShowConfirm(false);
-    setTimeout(() => setAppliedId(null), 3000);
+      toast.success(`Template "${selectedTemplate.name}" applied`, {
+        description: `${selectedTemplate.routes.length} route(s) added to ${targetServer}`,
+      });
+      setAppliedId(selectedTemplate.id);
+      setShowConfirm(false);
+      setTimeout(() => setAppliedId(null), 3000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Failed to apply template", { description: message });
+    }
   }
 
   return (
@@ -150,8 +159,18 @@ export function TemplatesPage() {
 
       {/* JSON Preview Dialog */}
       {showPreview && selectedTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setShowPreview(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setShowPreview(false);
+          }}
+        >
+          <div
+            className="bg-background border rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b flex items-center justify-between">
               <div>
                 <h3 className="font-semibold">{selectedTemplate.name}</h3>

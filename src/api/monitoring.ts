@@ -19,10 +19,10 @@ export const monitoringApi = {
 
   /**
    * Get Prometheus metrics as text.
-   * Note: This returns plain text, not JSON.
+   * The /metrics endpoint returns plain text (not JSON), which `request<string>`
+   * handles via the text content-type branch.
    */
-  getMetrics: async (): Promise<string> => {
-    const response = await fetch(`${import.meta.env["VITE_CADDY_API_BASE"] ?? "/ui/api"}/metrics`);
-    return response.text();
+  getMetrics: (): Promise<string> => {
+    return request<string>("/metrics");
   },
 };
