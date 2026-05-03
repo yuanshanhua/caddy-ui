@@ -420,16 +420,6 @@ collect_params() {
     fi
   done
 
-  # Install directory
-  read -rp "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR < /dev/tty
-  INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
-  # Expand ~ to $HOME (read does not perform tilde expansion)
-  if [[ "$INSTALL_DIR" == "~/"* ]]; then
-    INSTALL_DIR="$HOME/${INSTALL_DIR:2}"
-  elif [[ "$INSTALL_DIR" == "~" ]]; then
-    INSTALL_DIR="$HOME"
-  fi
-
   # Admin API port
   read -rp "$(echo -e "${BLUE}Admin API port${RESET} [$DEFAULT_ADMIN_PORT]: ")" ADMIN_PORT < /dev/tty
   ADMIN_PORT="${ADMIN_PORT:-$DEFAULT_ADMIN_PORT}"
@@ -798,22 +788,31 @@ main() {
   check_prerequisites
 
   # Check for existing installation
-  # First, ask for install directory in case it's non-default
-  local check_dir="$DEFAULT_INSTALL_DIR"
+  # First check the default path
+  if detect_existing_install "$DEFAULT_INSTALL_DIR"; then
+    do_update "$DEFAULT_INSTALL_DIR"
+    exit 0
+  fi
 
-  if detect_existing_install "$check_dir"; then
-    do_update "$check_dir"
+  # Default path has no install - ask user for their install directory
+  echo ""
+  read -rp "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR < /dev/tty
+  INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
+  # Expand ~ to $HOME
+  if [[ "$INSTALL_DIR" == "~/"* ]]; then
+    INSTALL_DIR="$HOME/${INSTALL_DIR:2}"
+  elif [[ "$INSTALL_DIR" == "~" ]]; then
+    INSTALL_DIR="$HOME"
+  fi
+
+  # Check user-specified path for existing install
+  if [[ "$INSTALL_DIR" != "$DEFAULT_INSTALL_DIR" ]] && detect_existing_install "$INSTALL_DIR"; then
+    do_update "$INSTALL_DIR"
     exit 0
   fi
 
   # Fresh install flow
   collect_params
-
-  # Check install directory for existing install (with user-specified path)
-  if [[ "$INSTALL_DIR" != "$DEFAULT_INSTALL_DIR" ]] && detect_existing_install "$INSTALL_DIR"; then
-    do_update "$INSTALL_DIR"
-    exit 0
-  fi
 
   # Generate password hash
   hash_password
