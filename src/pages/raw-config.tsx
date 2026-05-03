@@ -454,11 +454,7 @@ export function RawConfigPage() {
                   <Download className="h-4 w-4" />
                   {t("rawConfig.export")}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                   <Upload className="h-4 w-4" />
                   {t("rawConfig.import")}
                 </Button>
