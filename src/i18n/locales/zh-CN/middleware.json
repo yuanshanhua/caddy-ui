@@ -145,6 +145,8 @@
     "upstreams": "上游（逗号分隔）",
     "upstreamsPlaceholder": "localhost:3000, localhost:3001",
     "upstreamsHint": "要代理到的后端地址。格式：host:port",
+    "proxyAdvanced": "高级设置",
+    "proxyAdvancedConfigured": "已配置高级设置",
     "rootDirectory": "根目录",
     "rootPlaceholder": "/var/www/html",
     "statusCode": "状态码",

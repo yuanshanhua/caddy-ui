@@ -8,7 +8,7 @@
  * - Middleware handlers (headers, encode, rewrite, authentication, CORS)
  */
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AdvancedMatchersForm } from "@/components/middleware/advanced-matchers-form";
@@ -17,6 +17,7 @@ import { CorsForm } from "@/components/middleware/cors-form";
 import { EncodeForm } from "@/components/middleware/encode-form";
 import { HeadersForm } from "@/components/middleware/headers-form";
 import { RewriteForm } from "@/components/middleware/rewrite-form";
+import { ReverseProxyFormDialog } from "@/components/proxy/reverse-proxy-form-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,6 +39,7 @@ import type {
 } from "@/types/handlers";
 import type { HttpRoute } from "@/types/http-app";
 import type { RequestMatcher } from "@/types/matchers";
+import type { ReverseProxyHandler } from "@/types/reverse-proxy";
 
 interface RouteFormDialogProps {
   open: boolean;
@@ -105,6 +107,8 @@ export function RouteFormDialog({
   // Handler state
   const [handlerType, setHandlerType] = useState<HandlerType>("reverse_proxy");
   const [proxyUpstreams, setProxyUpstreams] = useState("");
+  const [reverseProxyHandler, setReverseProxyHandler] = useState<ReverseProxyHandler | undefined>();
+  const [showProxyAdvanced, setShowProxyAdvanced] = useState(false);
   const [fileRoot, setFileRoot] = useState("");
   const [staticBody, setStaticBody] = useState("");
   const [staticStatus, setStaticStatus] = useState("200");
@@ -161,8 +165,12 @@ export function RouteFormDialog({
       for (const handler of handlers) {
         if (handler.handler === "reverse_proxy") {
           setHandlerType("reverse_proxy");
-          const rp = handler as { upstreams?: Array<{ dial?: string }> };
+          const rp = handler as ReverseProxyHandler;
           setProxyUpstreams(rp.upstreams?.map((u) => u.dial ?? "").join(", ") ?? "");
+          // Store full handler if it has advanced config beyond upstreams
+          const hasAdvanced =
+            !!rp.load_balancing || !!rp.health_checks || !!rp.transport || !!rp.headers;
+          setReverseProxyHandler(hasAdvanced ? rp : undefined);
         } else if (handler.handler === "file_server") {
           setHandlerType("file_server");
           const fs = handler as { root?: string };
@@ -215,6 +223,8 @@ export function RouteFormDialog({
       setAdvancedMatcher({});
       setHandlerType("reverse_proxy");
       setProxyUpstreams("localhost:3000");
+      setReverseProxyHandler(undefined);
+      setShowProxyAdvanced(false);
       setFileRoot("");
       setStaticBody("");
       setStaticStatus("200");
@@ -306,7 +316,12 @@ export function RouteFormDialog({
           .map((u) => u.trim())
           .filter(Boolean)
           .map((dial) => ({ dial }));
-        handlers.push({ handler: "reverse_proxy" as const, upstreams });
+        if (reverseProxyHandler) {
+          // Use full advanced config but override upstreams from the text field
+          handlers.push({ ...reverseProxyHandler, upstreams });
+        } else {
+          handlers.push({ handler: "reverse_proxy" as const, upstreams });
+        }
         break;
       }
       case "file_server":
@@ -531,6 +546,43 @@ export function RouteFormDialog({
                     onChange={(e) => setProxyUpstreams(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">{t("routeForm.upstreamsHint")}</p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowProxyAdvanced(true)}
+                    >
+                      <Settings2 className="h-3.5 w-3.5 mr-1.5" />
+                      {t("routeForm.proxyAdvanced")}
+                    </Button>
+                    {reverseProxyHandler && (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                        {t("routeForm.proxyAdvancedConfigured")}
+                      </span>
+                    )}
+                  </div>
+                  <ReverseProxyFormDialog
+                    open={showProxyAdvanced}
+                    onOpenChange={setShowProxyAdvanced}
+                    initialHandler={
+                      reverseProxyHandler ?? {
+                        handler: "reverse_proxy",
+                        upstreams: proxyUpstreams
+                          .split(",")
+                          .map((u) => u.trim())
+                          .filter(Boolean)
+                          .map((dial) => ({ dial })),
+                      }
+                    }
+                    onSubmit={(handler) => {
+                      setReverseProxyHandler(handler);
+                      // Sync upstreams text field from the advanced dialog
+                      const ups = handler.upstreams?.map((u) => u.dial ?? "").join(", ") ?? "";
+                      setProxyUpstreams(ups);
+                      setShowProxyAdvanced(false);
+                    }}
+                  />
                 </div>
               )}
 

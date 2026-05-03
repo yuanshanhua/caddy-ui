@@ -55,8 +55,8 @@ export function ReverseProxyFormDialog({
   const [maxFails, setMaxFails] = useState("3");
   const [failDuration, setFailDuration] = useState("30s");
 
-  // Headers
-  const [addXForwardedFor, setAddXForwardedFor] = useState(true);
+  // Headers — Caddy adds X-Forwarded-* by default; this option disables them
+  const [disableXForwarded, setDisableXForwarded] = useState(false);
 
   // Transport
   const [insecureSkipVerify, setInsecureSkipVerify] = useState(false);
@@ -91,6 +91,12 @@ export function ReverseProxyFormDialog({
       setMaxFails(passive?.max_fails ? String(passive.max_fails) : "3");
       setFailDuration(passive?.fail_duration ?? "30s");
 
+      // Headers — check if X-Forwarded headers are explicitly deleted (disabled)
+      const deleteHeaders = initialHandler.headers?.request?.delete ?? [];
+      setDisableXForwarded(
+        deleteHeaders.includes("X-Forwarded-For") || deleteHeaders.includes("X-Forwarded-Proto"),
+      );
+
       // Transport
       setInsecureSkipVerify(initialHandler.transport?.tls?.insecure_skip_verify ?? false);
     } else {
@@ -105,7 +111,7 @@ export function ReverseProxyFormDialog({
       setPassiveEnabled(false);
       setMaxFails("3");
       setFailDuration("30s");
-      setAddXForwardedFor(true);
+      setDisableXForwarded(false);
       setInsecureSkipVerify(false);
     }
   }, [open, initialHandler]);
@@ -150,14 +156,11 @@ export function ReverseProxyFormDialog({
       }
     }
 
-    // Headers
-    if (addXForwardedFor) {
+    // Headers — tell Caddy to NOT add X-Forwarded-* when user wants them disabled
+    if (disableXForwarded) {
       handler.headers = {
         request: {
-          set: {
-            "X-Forwarded-For": ["{http.request.remote.host}"],
-            "X-Forwarded-Proto": ["{http.request.scheme}"],
-          },
+          delete: ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host"],
         },
       };
     }
@@ -348,13 +351,13 @@ export function ReverseProxyFormDialog({
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="x-forwarded"
-                    checked={addXForwardedFor}
-                    onChange={(e) => setAddXForwardedFor(e.target.checked)}
+                    id="disable-x-forwarded"
+                    checked={disableXForwarded}
+                    onChange={(e) => setDisableXForwarded(e.target.checked)}
                     className="h-4 w-4 rounded border-input"
                   />
-                  <Label htmlFor="x-forwarded" className="font-normal">
-                    Add X-Forwarded-For / X-Forwarded-Proto headers
+                  <Label htmlFor="disable-x-forwarded" className="font-normal">
+                    Disable X-Forwarded-For / X-Forwarded-Proto headers
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">

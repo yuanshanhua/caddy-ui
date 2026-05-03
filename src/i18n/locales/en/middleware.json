@@ -145,6 +145,8 @@
     "upstreams": "Upstreams (comma-separated)",
     "upstreamsPlaceholder": "localhost:3000, localhost:3001",
     "upstreamsHint": "Backend addresses to proxy to. Format: host:port",
+    "proxyAdvanced": "Advanced Settings",
+    "proxyAdvancedConfigured": "Advanced settings configured",
     "rootDirectory": "Root Directory",
     "rootPlaceholder": "/var/www/html",
     "statusCode": "Status Code",
