@@ -11,13 +11,13 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/",
-    "format": "biome format --write src/",
     "i18n:extract": "i18next-cli extract",
     "i18n:status": "i18next-cli status",
     "i18n:ci": "i18next-cli extract --ci",
     "deps:check": "ncu",
     "deps:update": "ncu -u --target minor && pnpm install",
-    "deps:update:major": "ncu -u && pnpm install"
+    "deps:update:major": "ncu -u && pnpm install",
+    "check": "pnpm lint && pnpm typecheck && pnpm i18n:ci"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.8",

@@ -84,17 +84,6 @@ src/
 └── pages/        # Route-level page components
 ```
 
-## Development Workflow
-
-```bash
-pnpm dev          # Start Vite dev server on :5173
-pnpm build        # Production build → dist/
-pnpm typecheck    # Run TypeScript type checking
-pnpm lint         # Run Biome linter
-pnpm lint:fix     # Auto-fix lint issues
-pnpm format       # Format code with Biome
-```
-
 ### Testing against Caddy
 1. Install Caddy locally
 2. Run `caddy run --config Caddyfile.dev` (in project root)

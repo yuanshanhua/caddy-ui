@@ -10,10 +10,11 @@ pnpm build        # TypeScript check + Vite production build → dist/
 pnpm typecheck    # TypeScript only (no emit)
 pnpm lint         # Biome check on src/
 pnpm lint:fix     # Biome auto-fix
-pnpm format       # Biome format
+pnpm i18n:ci      # Check i18n keys
+pnpm check        # typecheck + lint + i18n:ci
 ```
 
-CI runs: `pnpm lint` → `pnpm typecheck` → `pnpm build`. All three must pass.
+CI runs: `pnpm check` -> `pnpm build` must pass. Use `gh run watch` to watch GitHub Actions in real-time if available.
 
 To develop locally, run `caddy run --config Caddyfile.dev` in a separate terminal to provide the Admin API on localhost:2019.
 

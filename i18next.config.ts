@@ -13,6 +13,7 @@ export default defineConfig({
     defaultNS: "common",
     keySeparator: ".",
     removeUnusedKeys: false, // Keep manually-added keys safe
+    sort: false
   },
   types: {
     input: ["src/i18n/locales/en/**/*.json"],
