@@ -64,7 +64,7 @@ export function useReorderRoutes() {
 
   return useMutation({
     mutationFn: async ({ serverId, routes }: { serverId: string; routes: HttpRoute[] }) => {
-      await configApi.put(`apps/http/servers/${serverId}/routes`, routes);
+      await configApi.patch(`apps/http/servers/${serverId}/routes`, routes);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: configKeys.all });
