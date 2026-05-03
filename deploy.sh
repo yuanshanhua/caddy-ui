@@ -424,7 +424,11 @@ collect_params() {
   read -rp "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR < /dev/tty
   INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
   # Expand ~ to $HOME (read does not perform tilde expansion)
-  INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+  if [[ "$INSTALL_DIR" == "~/"* ]]; then
+    INSTALL_DIR="$HOME/${INSTALL_DIR:2}"
+  elif [[ "$INSTALL_DIR" == "~" ]]; then
+    INSTALL_DIR="$HOME"
+  fi
 
   # Admin API port
   read -rp "$(echo -e "${BLUE}Admin API port${RESET} [$DEFAULT_ADMIN_PORT]: ")" ADMIN_PORT < /dev/tty
@@ -434,7 +438,11 @@ collect_params() {
   read -rp "$(echo -e "${BLUE}Caddyfile path${RESET} [$DEFAULT_CADDYFILE]: ")" CADDYFILE_PATH < /dev/tty
   CADDYFILE_PATH="${CADDYFILE_PATH:-$DEFAULT_CADDYFILE}"
   # Expand ~ to $HOME
-  CADDYFILE_PATH="${CADDYFILE_PATH/#\~/$HOME}"
+  if [[ "$CADDYFILE_PATH" == "~/"* ]]; then
+    CADDYFILE_PATH="$HOME/${CADDYFILE_PATH:2}"
+  elif [[ "$CADDYFILE_PATH" == "~" ]]; then
+    CADDYFILE_PATH="$HOME"
+  fi
 
   # Confirm settings
   echo ""
