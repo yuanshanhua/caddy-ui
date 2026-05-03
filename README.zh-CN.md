@@ -25,7 +25,7 @@
 在服务器上部署 Caddy UI 的最快方式：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh -o deploy.sh && bash deploy.sh
+curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh | bash
 ```
 
 脚本将会：

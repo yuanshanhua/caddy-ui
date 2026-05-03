@@ -6,8 +6,8 @@
 # a secure Caddyfile configuration with BasicAuth protection.
 #
 # Usage:
-#   bash deploy.sh
-#   # or download and run:
+#   curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh | bash
+#   # or download first:
 #   curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh -o deploy.sh && bash deploy.sh
 #
 set -euo pipefail
@@ -305,7 +305,7 @@ do_update() {
   echo ""
 
   # Ask user to confirm
-  read -rp "$(echo -e "${YELLOW}Do you want to update to $latest_version? [y/N]:${RESET} ")" confirm
+  read -rp "$(echo -e "${YELLOW}Do you want to update to $latest_version? [y/N]:${RESET} ")" confirm < /dev/tty
   if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     info "Update cancelled."
     exit 0
@@ -381,7 +381,7 @@ collect_params() {
 
   # Domain
   while true; do
-    read -rp "$(echo -e "${BLUE}Domain name${RESET} (e.g., example.com): ")" DOMAIN
+    read -rp "$(echo -e "${BLUE}Domain name${RESET} (e.g., example.com): ")" DOMAIN < /dev/tty
     if [[ -n "$DOMAIN" ]]; then
       # Basic validation - must look like a domain
       if echo "$DOMAIN" | grep -qE '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$'; then
@@ -395,13 +395,13 @@ collect_params() {
   done
 
   # Username
-  read -rp "$(echo -e "${BLUE}Username${RESET} [admin]: ")" AUTH_USER
+  read -rp "$(echo -e "${BLUE}Username${RESET} [admin]: ")" AUTH_USER < /dev/tty
   AUTH_USER="${AUTH_USER:-admin}"
 
   # Password
   while true; do
     echo -en "${BLUE}Password${RESET}: "
-    read -rs AUTH_PASS
+    read -rs AUTH_PASS < /dev/tty
     echo ""
 
     if [[ ${#AUTH_PASS} -lt 8 ]]; then
@@ -410,7 +410,7 @@ collect_params() {
     fi
 
     echo -en "${BLUE}Confirm password${RESET}: "
-    read -rs AUTH_PASS_CONFIRM
+    read -rs AUTH_PASS_CONFIRM < /dev/tty
     echo ""
 
     if [[ "$AUTH_PASS" != "$AUTH_PASS_CONFIRM" ]]; then
@@ -421,17 +421,17 @@ collect_params() {
   done
 
   # Install directory
-  read -rp "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR
+  read -rp "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR < /dev/tty
   INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
   # Expand ~ to $HOME (read does not perform tilde expansion)
   INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
 
   # Admin API port
-  read -rp "$(echo -e "${BLUE}Admin API port${RESET} [$DEFAULT_ADMIN_PORT]: ")" ADMIN_PORT
+  read -rp "$(echo -e "${BLUE}Admin API port${RESET} [$DEFAULT_ADMIN_PORT]: ")" ADMIN_PORT < /dev/tty
   ADMIN_PORT="${ADMIN_PORT:-$DEFAULT_ADMIN_PORT}"
 
   # Caddyfile path
-  read -rp "$(echo -e "${BLUE}Caddyfile path${RESET} [$DEFAULT_CADDYFILE]: ")" CADDYFILE_PATH
+  read -rp "$(echo -e "${BLUE}Caddyfile path${RESET} [$DEFAULT_CADDYFILE]: ")" CADDYFILE_PATH < /dev/tty
   CADDYFILE_PATH="${CADDYFILE_PATH:-$DEFAULT_CADDYFILE}"
   # Expand ~ to $HOME
   CADDYFILE_PATH="${CADDYFILE_PATH/#\~/$HOME}"
@@ -447,7 +447,7 @@ collect_params() {
   echo -e "  Caddyfile:   ${GREEN}$CADDYFILE_PATH${RESET}"
   echo ""
 
-  read -rp "$(echo -e "${YELLOW}Proceed with these settings? [Y/n]:${RESET} ")" proceed
+  read -rp "$(echo -e "${YELLOW}Proceed with these settings? [Y/n]:${RESET} ")" proceed < /dev/tty
   if [[ "$proceed" == "n" || "$proceed" == "N" ]]; then
     info "Installation cancelled."
     exit 0
@@ -597,7 +597,7 @@ apply_config() {
       echo -e "${RED}${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
       echo ""
       echo -e "${RED}Type ${BOLD}YES${RESET}${RED} (uppercase) to confirm overwrite, or anything else to cancel:${RESET}"
-      read -rp "> " overwrite_confirm
+      read -rp "> " overwrite_confirm < /dev/tty
 
       if [[ "$overwrite_confirm" != "YES" ]]; then
         warn "Overwrite cancelled."
@@ -774,9 +774,9 @@ main() {
   echo -e "${DIM}https://github.com/${REPO}${RESET}"
   echo ""
 
-  # Check if running interactively
-  if [[ ! -t 0 ]]; then
-    die "This script requires interactive input. Please run it directly: bash deploy.sh"
+  # Check if terminal is available for interactive input
+  if [[ ! -t 0 ]] && [[ ! -c /dev/tty ]]; then
+    die "This script requires interactive input but no terminal is available."
   fi
 
   # Check prerequisites

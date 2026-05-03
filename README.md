@@ -25,7 +25,7 @@ A lightweight, pure static web interface for managing [Caddy](https://caddyserve
 The fastest way to deploy Caddy UI on your server:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh -o deploy.sh && bash deploy.sh
+curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.sh | bash
 ```
 
 The script will:
