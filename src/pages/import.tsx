@@ -5,8 +5,9 @@
  * Caddy's /adapt endpoint, preview the result, and apply it as the running config.
  */
 
+import Editor, { useMonaco } from "@monaco-editor/react";
 import { AlertTriangle, FileUp, Play, RotateCcw, Upload } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -14,8 +15,13 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { useAdaptCaddyfile, useConfigLoad } from "@/hooks/use-config";
+import {
+  caddyfileLanguageConfig,
+  caddyfileLanguageId,
+  caddyfileMonarchLanguage,
+} from "@/lib/monaco-caddyfile";
+import { useUiStore } from "@/stores/ui";
 
 export function ImportPage() {
   const { t } = useTranslation("import");
@@ -24,9 +30,26 @@ export function ImportPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const theme = useUiStore((s) => s.theme);
+  const monaco = useMonaco();
 
   const adaptMutation = useAdaptCaddyfile();
   const loadMutation = useConfigLoad();
+
+  // Register Caddyfile language with Monaco
+  useEffect(() => {
+    if (!monaco) return;
+    if (!monaco.languages.getLanguages().some((lang) => lang.id === caddyfileLanguageId)) {
+      monaco.languages.register({ id: caddyfileLanguageId });
+      monaco.languages.setMonarchTokensProvider(caddyfileLanguageId, caddyfileMonarchLanguage);
+      monaco.languages.setLanguageConfiguration(caddyfileLanguageId, caddyfileLanguageConfig);
+    }
+  }, [monaco]);
+
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const monacoTheme = isDark ? "vs-dark" : "light";
 
   const hasContent = caddyfile.trim().length > 0;
   const adaptedConfig = adaptMutation.data?.result ?? null;
@@ -151,16 +174,28 @@ export function ImportPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Textarea
-            className="min-h-[300px] font-mono text-sm resize-y"
-            placeholder={t("caddyfile.placeholder")}
-            value={caddyfile}
-            onChange={(e) => {
-              setCaddyfile(e.target.value);
-              if (adaptedConfig) adaptMutation.reset();
-            }}
-            spellCheck={false}
-          />
+          <div className="rounded-md border overflow-hidden">
+            <Editor
+              height="300px"
+              language={caddyfileLanguageId}
+              value={caddyfile}
+              onChange={(value) => {
+                setCaddyfile(value ?? "");
+                if (adaptedConfig) adaptMutation.reset();
+              }}
+              theme={monacoTheme}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                fontFamily: "JetBrains Mono, monospace",
+                lineNumbers: "on",
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 4,
+                wordWrap: "on",
+              }}
+            />
+          </div>
           <div className="flex items-center justify-between mt-4">
             <p className="text-xs text-muted-foreground">{t("caddyfile.adaptHint")}</p>
             <Button onClick={handleConvert} disabled={!hasContent || adaptMutation.isPending}>
@@ -203,9 +238,25 @@ export function ImportPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <pre className="w-full max-h-[400px] overflow-auto rounded-md border bg-muted/50 p-4 font-mono text-sm">
-              {jsonPreview}
-            </pre>
+            <div className="rounded-md border overflow-hidden">
+              <Editor
+                height="400px"
+                language="json"
+                value={jsonPreview}
+                theme={monacoTheme}
+                options={{
+                  readOnly: true,
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  fontFamily: "JetBrains Mono, monospace",
+                  lineNumbers: "on",
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 2,
+                  wordWrap: "on",
+                }}
+              />
+            </div>
             <div className="flex justify-end mt-4">
               <Button
                 onClick={() => setConfirmOpen(true)}

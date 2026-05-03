@@ -93,6 +93,9 @@ importers:
       i18next-cli:
         specifier: ^1.56.9
         version: 1.56.9(@types/node@24.12.2)(i18next@26.0.8(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(typescript@6.0.3)
+      monaco-editor:
+        specifier: ^0.55.1
+        version: 0.55.1
       npm-check-updates:
         specifier: ^22.1.0
         version: 22.1.0
