@@ -4,14 +4,14 @@
  * Generates a headers middleware handler with proper CORS headers.
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { corsFormSchema, corsFormDefaults, type CorsFormValues } from "@/lib/schemas/middleware";
+import { type CorsFormValues, corsFormDefaults, corsFormSchema } from "@/lib/schemas/middleware";
 import type { HeadersHandler } from "@/types/handlers";
 
 interface CorsFormProps {

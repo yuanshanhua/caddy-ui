@@ -4,10 +4,10 @@
  * Allows adding/setting/deleting request and response headers.
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -15,10 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
-  headersFormSchema,
-  headersFormDefaults,
-  type HeadersFormValues,
   type HeaderEntry,
+  type HeadersFormValues,
+  headersFormDefaults,
+  headersFormSchema,
 } from "@/lib/schemas/headers";
 import type { HeaderOps, HeadersHandler, RespHeaderOps } from "@/types/handlers";
 

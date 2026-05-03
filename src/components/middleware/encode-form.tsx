@@ -4,14 +4,18 @@
  * Configures gzip/zstd compression with minimum length and content-type preferences.
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { encodeFormSchema, encodeFormDefaults, type EncodeFormValues } from "@/lib/schemas/middleware";
+import {
+  type EncodeFormValues,
+  encodeFormDefaults,
+  encodeFormSchema,
+} from "@/lib/schemas/middleware";
 import type { EncodeHandler } from "@/types/handlers";
 
 interface EncodeFormProps {

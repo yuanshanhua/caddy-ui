@@ -4,19 +4,19 @@
  * Manages user accounts with bcrypt password hashing.
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  basicAuthFormSchema,
-  basicAuthFormDefaults,
   type BasicAuthFormValues,
+  basicAuthFormDefaults,
+  basicAuthFormSchema,
 } from "@/lib/schemas/middleware";
 import type { AuthenticationHandler, BasicAuthAccount } from "@/types/handlers";
 
@@ -176,9 +176,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
                           <div className="relative">
                             <Input
                               placeholder={
-                                isHashed
-                                  ? t("basicAuth.bcryptHash")
-                                  : t("basicAuth.password")
+                                isHashed ? t("basicAuth.bcryptHash") : t("basicAuth.password")
                               }
                               type={isHashed ? "text" : "password"}
                               {...f}

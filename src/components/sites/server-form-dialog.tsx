@@ -2,9 +2,9 @@
  * Dialog for creating/editing an HTTP server.
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { serverFormSchema, serverFormDefaults, type ServerFormValues } from "@/lib/schemas/server";
+import { type ServerFormValues, serverFormDefaults, serverFormSchema } from "@/lib/schemas/server";
 import type { HttpServer } from "@/types/http-app";
 
 interface ServerFormDialogProps {
@@ -54,9 +54,8 @@ export function ServerFormDialog({
 
   const form = useForm<ServerFormValues>({
     resolver: zodResolver(serverFormSchema),
-    defaultValues: isEdit && initialServer
-      ? parseInitialValues(initialId, initialServer)
-      : serverFormDefaults,
+    defaultValues:
+      isEdit && initialServer ? parseInitialValues(initialId, initialServer) : serverFormDefaults,
     values: open
       ? isEdit && initialServer
         ? parseInitialValues(initialId, initialServer)
@@ -126,10 +125,7 @@ export function ServerFormDialog({
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormControl>
-                              <Input
-                                placeholder={t("serverForm.listenPlaceholder")}
-                                {...field}
-                              />
+                              <Input placeholder={t("serverForm.listenPlaceholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

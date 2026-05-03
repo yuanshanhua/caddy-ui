@@ -8,10 +8,10 @@
  * - Middleware handlers (headers, encode, rewrite, authentication, CORS)
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronRight, Settings2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { AdvancedMatchersForm } from "@/components/middleware/advanced-matchers-form";
 import { BasicAuthForm } from "@/components/middleware/basic-auth-form";
@@ -33,7 +33,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { routeFormSchema, routeFormDefaults, type RouteFormValues } from "@/lib/schemas/route";
+import { type RouteFormValues, routeFormDefaults, routeFormSchema } from "@/lib/schemas/route";
 import type {
   AuthenticationHandler,
   EncodeHandler,
@@ -88,7 +88,7 @@ function parseInitialFormValues(route: HttpRoute | undefined): RouteFormValues {
       if (sr.headers?.["Location"]) {
         handlerType = "redir";
         redirUrl = sr.headers["Location"]?.[0] ?? "";
-        redirStatus = (String(sr.status_code ?? "302")) as RouteFormValues["redirStatus"];
+        redirStatus = String(sr.status_code ?? "302") as RouteFormValues["redirStatus"];
       } else {
         handlerType = "static_response";
         staticBody = sr.body ?? "";
@@ -190,10 +190,22 @@ export function RouteFormDialog({
       // Parse advanced matchers
       const advMatcher: Partial<RequestMatcher> = {};
       let hasAdvanced = false;
-      if (firstMatch?.header) { advMatcher.header = firstMatch.header; hasAdvanced = true; }
-      if (firstMatch?.query) { advMatcher.query = firstMatch.query; hasAdvanced = true; }
-      if (firstMatch?.remote_ip) { advMatcher.remote_ip = firstMatch.remote_ip; hasAdvanced = true; }
-      if (firstMatch?.protocol) { advMatcher.protocol = firstMatch.protocol; hasAdvanced = true; }
+      if (firstMatch?.header) {
+        advMatcher.header = firstMatch.header;
+        hasAdvanced = true;
+      }
+      if (firstMatch?.query) {
+        advMatcher.query = firstMatch.query;
+        hasAdvanced = true;
+      }
+      if (firstMatch?.remote_ip) {
+        advMatcher.remote_ip = firstMatch.remote_ip;
+        hasAdvanced = true;
+      }
+      if (firstMatch?.protocol) {
+        advMatcher.protocol = firstMatch.protocol;
+        hasAdvanced = true;
+      }
       setAdvancedMatcher(advMatcher);
       setShowAdvancedMatchers(hasAdvanced);
 
@@ -202,7 +214,8 @@ export function RouteFormDialog({
       for (const handler of handlers) {
         if (handler.handler === "reverse_proxy") {
           const rp = handler as ReverseProxyHandler;
-          const hasAdv = !!rp.load_balancing || !!rp.health_checks || !!rp.transport || !!rp.headers;
+          const hasAdv =
+            !!rp.load_balancing || !!rp.health_checks || !!rp.transport || !!rp.headers;
           setReverseProxyHandler(hasAdv ? rp : undefined);
         } else if (handler.handler === "headers") {
           const hdrHandler = handler as HeadersHandler;
@@ -246,23 +259,44 @@ export function RouteFormDialog({
     let hasMatcher = false;
 
     if (values.hosts.trim()) {
-      matcher.host = values.hosts.split(",").map((h) => h.trim()).filter(Boolean);
+      matcher.host = values.hosts
+        .split(",")
+        .map((h) => h.trim())
+        .filter(Boolean);
       hasMatcher = true;
     }
     if (values.paths.trim()) {
-      matcher.path = values.paths.split(",").map((p) => p.trim()).filter(Boolean);
+      matcher.path = values.paths
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
       hasMatcher = true;
     }
     if (values.methods.trim()) {
-      matcher.method = values.methods.split(",").map((m) => m.trim().toUpperCase()).filter(Boolean);
+      matcher.method = values.methods
+        .split(",")
+        .map((m) => m.trim().toUpperCase())
+        .filter(Boolean);
       hasMatcher = true;
     }
 
     if (showAdvancedMatchers) {
-      if (advancedMatcher.header) { matcher.header = advancedMatcher.header; hasMatcher = true; }
-      if (advancedMatcher.query) { matcher.query = advancedMatcher.query; hasMatcher = true; }
-      if (advancedMatcher.remote_ip) { matcher.remote_ip = advancedMatcher.remote_ip; hasMatcher = true; }
-      if (advancedMatcher.protocol) { matcher.protocol = advancedMatcher.protocol; hasMatcher = true; }
+      if (advancedMatcher.header) {
+        matcher.header = advancedMatcher.header;
+        hasMatcher = true;
+      }
+      if (advancedMatcher.query) {
+        matcher.query = advancedMatcher.query;
+        hasMatcher = true;
+      }
+      if (advancedMatcher.remote_ip) {
+        matcher.remote_ip = advancedMatcher.remote_ip;
+        hasMatcher = true;
+      }
+      if (advancedMatcher.protocol) {
+        matcher.protocol = advancedMatcher.protocol;
+        hasMatcher = true;
+      }
     }
 
     return hasMatcher ? [matcher] : undefined;
@@ -280,7 +314,10 @@ export function RouteFormDialog({
     switch (values.handlerType) {
       case "reverse_proxy": {
         const upstreams = values.proxyUpstreams
-          .split(",").map((u) => u.trim()).filter(Boolean).map((dial) => ({ dial }));
+          .split(",")
+          .map((u) => u.trim())
+          .filter(Boolean)
+          .map((dial) => ({ dial }));
         if (reverseProxyHandler) {
           handlers.push({ ...reverseProxyHandler, upstreams });
         } else {
@@ -580,8 +617,7 @@ export function RouteFormDialog({
                       }
                       onSubmit={(handler) => {
                         setReverseProxyHandler(handler);
-                        const ups =
-                          handler.upstreams?.map((u) => u.dial ?? "").join(", ") ?? "";
+                        const ups = handler.upstreams?.map((u) => u.dial ?? "").join(", ") ?? "";
                         form.setValue("proxyUpstreams", ups);
                         setShowProxyAdvanced(false);
                       }}
@@ -670,9 +706,7 @@ export function RouteFormDialog({
                       name="redirStatus"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
-                          <Label htmlFor="redir-status">
-                            {t("routeForm.redirectStatusCode")}
-                          </Label>
+                          <Label htmlFor="redir-status">{t("routeForm.redirectStatusCode")}</Label>
                           <FormControl>
                             <Select
                               id="redir-status"

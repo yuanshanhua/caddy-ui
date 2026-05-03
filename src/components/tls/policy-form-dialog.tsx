@@ -3,9 +3,9 @@
  * Used for both creating and editing automation policies.
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,11 +20,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
-  tlsPolicyFormSchema,
-  tlsPolicyFormDefaults,
+  type IssuerFormValues,
   issuerDefaults,
   type TlsPolicyFormValues,
-  type IssuerFormValues,
+  tlsPolicyFormDefaults,
+  tlsPolicyFormSchema,
 } from "@/lib/schemas/tls-policy";
 import type { AutomationPolicy, TlsIssuer } from "@/types/tls-app";
 
@@ -134,9 +134,7 @@ export function PolicyFormDialog({
 
   const form = useForm<TlsPolicyFormValues>({
     resolver: zodResolver(tlsPolicyFormSchema),
-    defaultValues: initialPolicy
-      ? parseInitialValues(initialPolicy)
-      : tlsPolicyFormDefaults,
+    defaultValues: initialPolicy ? parseInitialValues(initialPolicy) : tlsPolicyFormDefaults,
     values: open
       ? initialPolicy
         ? parseInitialValues(initialPolicy)

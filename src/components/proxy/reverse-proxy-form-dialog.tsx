@@ -3,9 +3,9 @@
  * Used as a standalone page/section when editing proxy settings in detail.
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,14 +15,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
-  reverseProxyFormSchema,
-  reverseProxyDefaults,
   type ReverseProxyFormValues,
+  reverseProxyDefaults,
+  reverseProxyFormSchema,
 } from "@/lib/schemas/reverse-proxy";
 import type { ReverseProxyHandler } from "@/types/reverse-proxy";
 
@@ -46,7 +53,9 @@ function parseInitialValues(handler: ReverseProxyHandler): ReverseProxyFormValue
 
   return {
     upstreams: ups.length > 0 ? ups : [{ dial: "", maxRequests: "" }],
-    lbPolicy: (handler.load_balancing?.selection_policy?.policy as ReverseProxyFormValues["lbPolicy"]) ?? "round_robin",
+    lbPolicy:
+      (handler.load_balancing?.selection_policy?.policy as ReverseProxyFormValues["lbPolicy"]) ??
+      "round_robin",
     tryDuration: handler.load_balancing?.try_duration ?? "",
     retries: handler.load_balancing?.retries ? String(handler.load_balancing.retries) : "",
     healthEnabled: !!active,
@@ -191,12 +200,7 @@ export function ReverseProxyFormDialog({
                       />
                     </div>
                     {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => remove(idx)}
-                      >
+                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(idx)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}

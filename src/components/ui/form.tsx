@@ -5,18 +5,8 @@
  * React Hook Form's controller pattern with our existing UI components.
  */
 
-import {
-  createContext,
-  useContext,
-  useId,
-  type ComponentPropsWithoutRef,
-} from "react";
-import type {
-  ControllerProps,
-  FieldPath,
-  FieldValues,
-  UseFormReturn,
-} from "react-hook-form";
+import { type ComponentPropsWithoutRef, createContext, useContext, useId } from "react";
+import type { ControllerProps, FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 import { Controller, FormProvider, useFormContext } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -85,33 +75,23 @@ function FormItem({ className, ...props }: ComponentPropsWithoutRef<"div">) {
 
 // --- FormLabel ---
 
-function FormLabel({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<typeof Label>) {
+function FormLabel({ className, ...props }: ComponentPropsWithoutRef<typeof Label>) {
   const { formItemId, error } = useFormField();
 
   return (
-    <Label
-      className={cn(error && "text-destructive", className)}
-      htmlFor={formItemId}
-      {...props}
-    />
+    <Label className={cn(error && "text-destructive", className)} htmlFor={formItemId} {...props} />
   );
 }
 
 // --- FormControl ---
 
 function FormControl({ ...props }: ComponentPropsWithoutRef<"div">) {
-  const { formItemId, formDescriptionId, formMessageId, error } =
-    useFormField();
+  const { formItemId, formDescriptionId, formMessageId, error } = useFormField();
 
   return (
     <div
       id={formItemId}
-      aria-describedby={
-        error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId
-      }
+      aria-describedby={error ? `${formDescriptionId} ${formMessageId}` : formDescriptionId}
       aria-invalid={!!error}
       {...props}
     />
@@ -120,10 +100,7 @@ function FormControl({ ...props }: ComponentPropsWithoutRef<"div">) {
 
 // --- FormDescription ---
 
-function FormDescription({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<"p">) {
+function FormDescription({ className, ...props }: ComponentPropsWithoutRef<"p">) {
   const { formDescriptionId } = useFormField();
 
   return (
@@ -137,11 +114,7 @@ function FormDescription({
 
 // --- FormMessage ---
 
-function FormMessage({
-  className,
-  children,
-  ...props
-}: ComponentPropsWithoutRef<"p">) {
+function FormMessage({ className, children, ...props }: ComponentPropsWithoutRef<"p">) {
   const { error, formMessageId } = useFormField();
   const body = error?.message ?? children;
 
@@ -158,6 +131,7 @@ function FormMessage({
   );
 }
 
+export type { UseFormReturn };
 export {
   Form,
   FormControl,
@@ -168,5 +142,3 @@ export {
   FormMessage,
   useFormField,
 };
-
-export type { UseFormReturn };

@@ -2,8 +2,8 @@
  * Dialog for creating/editing a named log configuration.
  */
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { logFormSchema, logFormDefaults, type LogFormValues } from "@/lib/schemas/log";
+import { type LogFormValues, logFormDefaults, logFormSchema } from "@/lib/schemas/log";
 import type { LogConfig, LogWriter } from "@/types/caddy";
 
 interface LogFormDialogProps {
@@ -115,9 +115,7 @@ export function LogFormDialog({
   const form = useForm<LogFormValues>({
     resolver: zodResolver(logFormSchema),
     defaultValues:
-      isEdit && initialLog
-        ? parseInitialValues(initialName, initialLog)
-        : logFormDefaults,
+      isEdit && initialLog ? parseInitialValues(initialName, initialLog) : logFormDefaults,
     values: open
       ? isEdit && initialLog
         ? parseInitialValues(initialName, initialLog)
@@ -337,11 +335,7 @@ export function LogFormDialog({
                 {tc("actions.cancel")}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading
-                  ? tc("status.saving")
-                  : isEdit
-                    ? t("logForm.update")
-                    : t("logForm.addLog")}
+                {loading ? tc("status.saving") : isEdit ? t("logForm.update") : t("logForm.addLog")}
               </Button>
             </DialogFooter>
           </form>
