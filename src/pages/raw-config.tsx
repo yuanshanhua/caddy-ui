@@ -271,52 +271,10 @@ export function RawConfigPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header + Toolbar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("rawConfig.title")}</h1>
-          <p className="text-muted-foreground">{t("rawConfig.subtitle")}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {hasChanges && !diffTarget && (
-            <Badge variant="warning">{t("rawConfig.unsavedChanges")}</Badge>
-          )}
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4" />
-            {t("rawConfig.export")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="h-4 w-4" />
-            {t("rawConfig.import")}
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,.caddyfile,.Caddyfile,Caddyfile"
-            className="hidden"
-            onChange={handleImportFile}
-          />
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="h-4 w-4" />
-            {tc("actions.copy")}
-          </Button>
-          {hasChanges && !diffTarget && (
-            <>
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                <RotateCcw className="h-4 w-4" />
-                {tc("actions.reset")}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={!!parseError || loadMutation.isPending}
-              >
-                <Save className="h-4 w-4" />
-                {loadMutation.isPending ? tc("status.saving") : tc("actions.apply")}
-              </Button>
-            </>
-          )}
-        </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{t("rawConfig.title")}</h1>
+        <p className="text-muted-foreground">{t("rawConfig.subtitle")}</p>
       </div>
 
       {/* Warnings */}
@@ -473,7 +431,7 @@ export function RawConfigPage() {
                 {diffTarget ? t("rawConfig.diffDescription") : t("rawConfig.jsonDescription")}
               </CardDescription>
             </div>
-            {diffTarget && (
+            {diffTarget ? (
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={handleCancelDiff}>
                   <X className="h-4 w-4" />
@@ -488,6 +446,49 @@ export function RawConfigPage() {
                   <Save className="h-4 w-4" />
                   {loadMutation.isPending ? tc("status.applying") : tc("actions.apply")}
                 </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {hasChanges && <Badge variant="warning">{t("rawConfig.unsavedChanges")}</Badge>}
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4" />
+                  {t("rawConfig.export")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4" />
+                  {t("rawConfig.import")}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,.caddyfile,.Caddyfile,Caddyfile"
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+                <Button variant="outline" size="sm" onClick={handleCopy}>
+                  <Copy className="h-4 w-4" />
+                  {tc("actions.copy")}
+                </Button>
+                {hasChanges && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleReset}>
+                      <RotateCcw className="h-4 w-4" />
+                      {tc("actions.reset")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={!!parseError || loadMutation.isPending}
+                    >
+                      <Save className="h-4 w-4" />
+                      {loadMutation.isPending ? tc("status.saving") : tc("actions.apply")}
+                    </Button>
+                  </>
+                )}
               </div>
             )}
           </div>
