@@ -2,6 +2,7 @@
  * Raw Config page — full JSON editor for the Caddy configuration.
  */
 
+import Editor from "@monaco-editor/react";
 import { AlertTriangle, Copy, RotateCcw, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -40,10 +41,11 @@ export function RawConfigPage() {
     [hasChanges, parseError, currentJson, editedJson],
   );
 
-  function handleChange(value: string) {
-    setEditedJson(value);
+  function handleChange(value: string | undefined) {
+    const v = value ?? "";
+    setEditedJson(v);
     try {
-      JSON.parse(value);
+      JSON.parse(v);
       setParseError(null);
     } catch (e) {
       setParseError(e instanceof Error ? e.message : "Invalid JSON");
@@ -171,12 +173,26 @@ export function RawConfigPage() {
           <CardDescription>{t("rawConfig.jsonDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <textarea
-            className="w-full min-h-[600px] rounded-md border bg-muted/50 p-4 font-mono text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
-            value={displayJson}
-            onChange={(e) => handleChange(e.target.value)}
-            spellCheck={false}
-          />
+          <div className="rounded-md border overflow-hidden">
+            <Editor
+              height="600px"
+              defaultLanguage="json"
+              value={displayJson}
+              onChange={handleChange}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                fontFamily: "JetBrains Mono, monospace",
+                lineNumbers: "on",
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 2,
+                wordWrap: "on",
+                formatOnPaste: true,
+              }}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
