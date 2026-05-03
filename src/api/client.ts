@@ -1,11 +1,12 @@
 /**
  * Base API client for communicating with Caddy's Admin API.
  *
- * In production, the UI is served at /ui/ and the API is reverse-proxied
- * at /ui/api/ → localhost:2019. In development, Vite's proxy handles this.
+ * In production, the UI is served at the root of a subdomain and the API
+ * is reverse-proxied at /api/ → localhost:2019. In development, Vite's
+ * proxy handles this.
  */
 
-const API_BASE = import.meta.env["VITE_CADDY_API_BASE"] ?? "/ui/api";
+const API_BASE = import.meta.env["VITE_CADDY_API_BASE"] ?? "/api";
 
 /** Error thrown when the Caddy Admin API returns a non-2xx response. */
 export class CaddyApiError extends Error {

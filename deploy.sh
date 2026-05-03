@@ -479,29 +479,22 @@ generate_caddyfile() {
 }
 
 ${DOMAIN} {
-    # Caddy UI - API reverse proxy (must be matched before static files)
-    @ui-api path /ui/api /ui/api/*
-    handle @ui-api {
-        basicauth {
-            ${AUTH_USER} ${PASS_HASH}
-        }
-        uri strip_prefix /ui/api
+    basicauth {
+        ${AUTH_USER} ${PASS_HASH}
+    }
+
+    # API reverse proxy → Caddy Admin API
+    handle /api/* {
+        uri strip_prefix /api
         reverse_proxy localhost:${ADMIN_PORT}
     }
 
-    # Caddy UI - Static files
-    @ui path /ui /ui/*
-    handle @ui {
-        basicauth {
-            ${AUTH_USER} ${PASS_HASH}
-        }
-        uri strip_prefix /ui
+    # Static files (SPA)
+    handle {
         root * ${INSTALL_DIR}/dist
         try_files {path} /index.html
         file_server
     }
-
-    # Your other site configurations go below
 }
 EOF
 )
@@ -742,7 +735,7 @@ print_summary() {
   echo -e "${GREEN}${BOLD}  Caddy UI deployed successfully!${RESET}"
   echo -e "${GREEN}${BOLD}================================================${RESET}"
   echo ""
-  echo -e "  URL:      ${BOLD}https://${DOMAIN}/ui/${RESET}"
+  echo -e "  URL:      ${BOLD}https://${DOMAIN}/${RESET}"
   echo -e "  User:     ${BOLD}${AUTH_USER}${RESET}"
   echo -e "  Files:    ${BOLD}${INSTALL_DIR}/dist${RESET}"
   if [[ "${CONFIG_WRITTEN:-false}" == "true" ]]; then
@@ -758,13 +751,13 @@ print_summary() {
     echo "  2. Or run as a system service:"
     echo -e "     ${DIM}sudo systemctl start caddy${RESET}"
     echo ""
-    echo "  3. Access the UI at: https://${DOMAIN}/ui/"
+    echo "  3. Access the UI at: https://${DOMAIN}/"
     echo ""
   else
     echo -e "${BOLD}Next steps:${RESET}"
     echo "  1. Apply the generated configuration (see above)"
     echo "  2. Reload or start Caddy"
-    echo "  3. Access the UI at: https://${DOMAIN}/ui/"
+    echo "  3. Access the UI at: https://${DOMAIN}/"
     echo ""
   fi
 }

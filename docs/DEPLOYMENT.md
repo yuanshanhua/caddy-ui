@@ -3,6 +3,7 @@
 ## Prerequisites
 - A running Caddy server (v2.7+)
 - The `dist/` folder from `pnpm build`
+- A dedicated subdomain (e.g., `caddy.example.com`)
 
 ## Quick Setup
 
@@ -25,31 +26,24 @@ scp -r dist/ your-server:/opt/caddy-ui/dist
   admin localhost:2019
 }
 
-your-domain.com {
-  # Protect UI with basic auth
-  # Proxy API requests to Admin API (must be matched before static files)
-  @ui-api path /ui/api /ui/api/*
-  handle @ui-api {
-    basicauth {
-      admin $2a$14$YOUR_BCRYPT_HASH_HERE
-    }
-    uri strip_prefix /ui/api
+caddy.example.com {
+  basicauth {
+    # Generate hash: caddy hash-password
+    admin $2a$14$YOUR_BCRYPT_HASH_HERE
+  }
+
+  # API reverse proxy → Caddy Admin API
+  handle /api/* {
+    uri strip_prefix /api
     reverse_proxy localhost:2019
   }
 
-  @ui path /ui /ui/*
-  handle @ui {
-    basicauth {
-      # Generate hash: caddy hash-password
-      admin $2a$14$YOUR_BCRYPT_HASH_HERE
-    }
-    uri strip_prefix /ui
+  # Static files (SPA)
+  handle {
     root * /opt/caddy-ui/dist
     try_files {path} /index.html
     file_server
   }
-
-  # ... your other site configuration below ...
 }
 ```
 
@@ -59,18 +53,18 @@ caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ### 5. Access the UI
-Navigate to `https://your-domain.com/ui/`
+Navigate to `https://caddy.example.com/`
 
 ## Security Notes
 
-1. **Always use HTTPS** in production — Caddy handles this automatically
+1. **Always use HTTPS** in production — Caddy handles this automatically with a domain name
 2. **Generate a strong password hash**: `caddy hash-password`
 3. **Admin API stays local** — only accessible via the reverse proxy, never exposed directly
 4. **Consider IP restrictions** if you want additional security:
    ```caddyfile
-   @ui {
-     path /ui /ui/*
-     remote_ip 10.0.0.0/8 192.168.0.0/16
+   @allowed remote_ip 10.0.0.0/8 192.168.0.0/16
+   handle @allowed {
+     # ... routes ...
    }
    ```
 
@@ -89,19 +83,16 @@ COPY Caddyfile /etc/caddy/Caddyfile
 }
 
 :80 {
-  handle /ui/api/* {
-    basicauth {
-      admin $2a$14$HASH
-    }
-    uri strip_prefix /ui/api
+  basicauth {
+    admin $2a$14$HASH
+  }
+
+  handle /api/* {
+    uri strip_prefix /api
     reverse_proxy localhost:2019
   }
 
-  handle /ui/* {
-    basicauth {
-      admin $2a$14$HASH
-    }
-    uri strip_prefix /ui
+  handle {
     root * /srv/caddy-ui
     try_files {path} /index.html
     file_server

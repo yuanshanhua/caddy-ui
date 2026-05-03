@@ -179,7 +179,7 @@ src/
 ### Testing against Caddy
 1. Install Caddy locally
 2. Run `caddy run --config Caddyfile.dev` (in project root)
-3. Vite proxies `/ui/api/*` → `localhost:2019`
+3. Vite proxies `/api/*` → `localhost:2019`
 
 ## Important Constraints
 

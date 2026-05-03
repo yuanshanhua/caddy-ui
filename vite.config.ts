@@ -13,10 +13,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/ui/api": {
+      "/api": {
         target: "http://localhost:2019",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ui\/api/, ""),
+        rewrite: (path) => path.replace(/^\/api/, ""),
         configure: (proxy) => {
           // Remove headers so Caddy's admin API treats the request
           // as a non-browser client, bypassing origin enforcement

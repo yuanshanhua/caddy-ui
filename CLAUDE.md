@@ -23,10 +23,9 @@ To develop locally, run `caddy run --config Caddyfile.dev` in a separate termina
 Caddy UI is a **pure static SPA** — no backend, no database. It manages Caddy web server through its [Admin API](https://caddyserver.com/docs/api). Caddy itself serves the built files and reverse-proxies API requests:
 
 ```
-Browser → Caddy (:443)
-             ├── /ui/*       → file_server (SPA static files)
-             ├── /ui/api/*   → reverse_proxy localhost:2019 (Admin API)
-             └── /*          → normal site routes
+Browser → Caddy (subdomain :443)
+             ├── /api/*   → reverse_proxy localhost:2019 (Admin API)
+             └── /*       → file_server (SPA static files)
 ```
 
 The running Caddy config IS the database. The UI reads/writes it via path-based REST operations (`GET/PUT/DELETE /config/{path}`) and full-config loads (`POST /load`).
@@ -50,4 +49,4 @@ Key rules:
 - Use `import type` for type-only imports
 - Biome config: 2-space indent, 100 char line width, double quotes, semicolons
 - shadcn/ui components live in `src/components/ui/` (CVA for variants)
-- Router basename is `/ui` — all routes are relative to that
+- Router basename is `/` — deployed at the root of a dedicated subdomain

@@ -33,6 +33,6 @@ export const router = createBrowserRouter(
     },
   ],
   {
-    basename: "/ui",
+    basename: "/",
   },
 );
