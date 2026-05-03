@@ -1,5 +1,5 @@
 /**
- * Header component with connection indicator, language switcher, and sidebar toggle.
+ * Header component with connection indicator, language switcher, theme toggle, and sidebar toggle.
  */
 
 import { PanelLeft, PanelLeftClose } from "lucide-react";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useUiStore } from "@/stores/ui";
 import { ConnectionIndicator } from "./connection-indicator";
 import { LanguageSwitcher } from "./language-switcher";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Header() {
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
@@ -24,6 +25,7 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <LanguageSwitcher />
         <ConnectionIndicator />
       </div>

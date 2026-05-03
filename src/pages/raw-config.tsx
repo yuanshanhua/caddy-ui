@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfig, useConfigLoad } from "@/hooks/use-config";
+import { useUiStore } from "@/stores/ui";
 
 /**
  * Detect if the admin section was changed between original and edited config.
@@ -29,6 +30,7 @@ export function RawConfigPage() {
   const { t: tc } = useTranslation();
   const { data: config, isLoading, isError, error } = useConfig();
   const loadMutation = useConfigLoad();
+  const theme = useUiStore((s) => s.theme);
   const [editedJson, setEditedJson] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
 
@@ -179,7 +181,12 @@ export function RawConfigPage() {
               defaultLanguage="json"
               value={displayJson}
               onChange={handleChange}
-              theme="vs-dark"
+              theme={
+                theme === "dark" ||
+                (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+                  ? "vs-dark"
+                  : "light"
+              }
               options={{
                 minimap: { enabled: false },
                 fontSize: 13,
