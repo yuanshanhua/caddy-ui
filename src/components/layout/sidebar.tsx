@@ -6,7 +6,6 @@ import {
   ArrowUpDown,
   FileCode,
   FileText,
-  FileUp,
   Globe,
   LayoutDashboard,
   LayoutTemplate,
@@ -21,7 +20,6 @@ import { useUiStore } from "@/stores/ui";
 const navItems = [
   { to: "/", icon: LayoutDashboard, labelKey: "nav.dashboard" },
   { to: "/sites", icon: Globe, labelKey: "nav.sites" },
-  { to: "/import", icon: FileUp, labelKey: "nav.import" },
   { to: "/upstreams", icon: ArrowUpDown, labelKey: "nav.upstreams" },
   { to: "/tls", icon: Shield, labelKey: "nav.tls" },
   { to: "/logging", icon: FileText, labelKey: "nav.logging" },

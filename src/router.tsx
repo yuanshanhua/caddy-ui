@@ -5,7 +5,6 @@
 import { createBrowserRouter } from "react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { DashboardPage } from "@/pages/dashboard";
-import { ImportPage } from "@/pages/import";
 import { LoggingPage } from "@/pages/logging";
 import { GlobalConfigPage, NotFoundPage } from "@/pages/placeholder";
 import { RawConfigPage } from "@/pages/raw-config";
@@ -23,7 +22,6 @@ export const router = createBrowserRouter(
         { index: true, element: <DashboardPage /> },
         { path: "sites", element: <SitesPage /> },
         { path: "sites/:serverId", element: <SiteDetailPage /> },
-        { path: "import", element: <ImportPage /> },
         { path: "upstreams", element: <UpstreamsPage /> },
         { path: "tls", element: <TlsPage /> },
         { path: "logging", element: <LoggingPage /> },
