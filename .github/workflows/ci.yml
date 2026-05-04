@@ -39,17 +39,6 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
 
-    services:
-      caddy:
-        image: caddy:2
-        ports:
-          - 12019:2019
-        options: >-
-          --health-cmd "wget -q --spider http://localhost:2019/config/ || exit 1"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -68,7 +57,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Start Caddy
+        run: |
+          echo '{"admin":{"listen":":2019","enforce_origin":false}}' > /tmp/caddy.json
+          docker run -d --name caddy-test -p 12019:2019 \
+            -v /tmp/caddy.json:/etc/caddy/caddy.json:ro \
+            caddy:2 caddy run --config /etc/caddy/caddy.json
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:12019/config/ > /dev/null 2>&1; then
+              echo "Caddy is ready"
+              break
+            fi
+            sleep 1
+          done
+
       - name: Run integration tests
         run: pnpm test:integration
         env:
           CADDY_TEST_URL: http://localhost:12019
+
+      - name: Stop Caddy
+        if: always()
+        run: docker rm -f caddy-test || true
