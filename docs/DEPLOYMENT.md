@@ -37,6 +37,7 @@ caddy.example.com {
     uri strip_prefix /api
     reverse_proxy localhost:2019 {
       header_up Host localhost:2019
+      header_up Origin http://localhost:2019
     }
   }
 

@@ -488,6 +488,7 @@ ${DOMAIN} {
         uri strip_prefix /api
         reverse_proxy localhost:${ADMIN_PORT} {
             header_up Host localhost:${ADMIN_PORT}
+            header_up Origin http://localhost:${ADMIN_PORT}
         }
     }
 
