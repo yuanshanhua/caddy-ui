@@ -1,59 +1,23 @@
 # Caddy UI Roadmap
 
-## Phase 1: Foundation ✅
-- [x] Project scaffolding (Vite + React + TypeScript + Tailwind)
-- [x] API client with typed errors
-- [x] Caddy config TypeScript type definitions
-- [x] App shell (sidebar + header + routing)
-- [x] Connection health indicator
-- [x] Dashboard page (status overview)
-- [x] Sites list page (read-only)
-- [x] Raw config editor (textarea, JSON validate, apply)
+## Completed
 
-## Phase 2: Core CRUD ✅
-- [x] Add new HTTP server (form + validation)
-- [x] Edit server listen addresses
-- [x] Add/edit/delete routes within a server
-- [x] Route matcher editor (host, path, method)
-- [x] Reverse proxy handler form (upstreams, load balancing, health checks)
-- [x] File server handler form
-- [x] Static response / redirect handler
-- [x] Config diff preview component
-- [x] Delete operations with confirmation dialogs
-- [x] CI/CD pipeline (GitHub Actions: lint + typecheck + build)
+- **Foundation**: Project scaffolding, API client, type definitions, app shell, dashboard
+- **Core CRUD**: HTTP servers, routes, matchers, handlers (reverse proxy, file server, static response)
+- **TLS & Caddyfile**: TLS policies, certificate display, Caddyfile import/adapt
+- **Middleware**: Headers, compression, BasicAuth, URI rewrite, CORS
+- **Operations**: Upstream health monitoring, logging config, config templates
+- **UX**: i18n (English + Chinese), Monaco editor, dark mode, export/import backup
 
-## Phase 3a: TLS & Caddyfile ✅
-- [x] Toast notification system (sonner)
-- [x] API client fix for string body passthrough (text/caddyfile)
-- [x] Caddyfile import page (paste/upload → /adapt → preview → apply)
-- [x] TLS certificate status display (auto-managed, file-loaded, PEM, folders)
-- [x] TLS automation policy management (CRUD with ACME/ZeroSSL/Internal issuers)
+## In Progress
 
-## Phase 3b: Middleware & Matchers ✅
-- [x] Headers middleware configuration (request/response header add/set/delete)
-- [x] Compression (encode) configuration (gzip/zstd, min_length)
-- [x] Advanced matchers (header, query, remote_ip)
-- [x] BasicAuth configuration (users, password hash generation)
-- [x] URI Rewrite handler
-- [x] CORS quick-configuration (built on headers middleware)
-
-## Phase 3c: Operations & Monitoring ✅
-- [x] Upstream health monitoring page (real-time polling with status cards)
-- [x] Logging configuration (log output, format, level per server)
-- [x] Config templates/presets (common patterns: WordPress, SPA, API gateway)
-- [ ] ~~Undo/revert last change~~ (deferred — requires IndexedDB snapshots, planned for Phase 4)
-
-## Phase 4: UX & Editor
-- [x] Internationalization (i18n) with react-i18next (English + Chinese)
-- [x] Monaco editor integration (JSON + Caddyfile syntax highlighting)
-- [x] Dark mode support
 - [ ] Config history (IndexedDB snapshots with timestamps)
-- [x] Export/import config backup (download/upload JSON)
 - [ ] Responsive design (mobile-friendly layout)
 - [ ] Keyboard shortcuts
 - [ ] Search across config
 
-## Phase 5: Advanced Operations
+## Future
+
 - [ ] Multi-site wizard (guided setup for common patterns)
 - [ ] DNS challenge configuration helper
 - [ ] Bulk operations (enable/disable multiple sites)
@@ -61,7 +25,8 @@
 - [ ] Integration with caddy-l4 (TCP/UDP proxy)
 - [ ] Config validation with helpful error messages
 
-## Non-Goals (Explicit)
+## Non-Goals
+
 - No user/session management
 - No database or persistent storage
 - No server-side rendering

@@ -50,7 +50,7 @@ export function useUpdateTlsPolicy() {
 
   return useMutation({
     mutationFn: async ({ index, policy }: { index: number; policy: AutomationPolicy }) => {
-      await configApi.put(`apps/tls/automation/policies/${index}`, policy);
+      await configApi.patch(`apps/tls/automation/policies/${index}`, policy);
     },
     onSuccess: () => {
       toast.success("TLS policy updated");

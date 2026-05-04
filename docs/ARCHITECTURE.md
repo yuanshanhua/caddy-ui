@@ -6,20 +6,17 @@ Caddy UI is a **pure static single-page application** that manages a Caddy web s
 
 ```
 Browser → Caddy (:443)
-             ├── /ui/*          → file_server (serves SPA)
-             ├── /ui/api/*      → reverse_proxy localhost:2019
-             └── /*             → normal site routing
+             ├── /api/*   → reverse_proxy localhost:2019 (Admin API)
+             └── /*       → file_server (SPA static files)
 ```
 
 ## Design Decisions
 
-### Why Static SPA (not a plugin, not a separate backend)?
-
 | Approach | Rejected Because |
 |----------|-----------------|
 | Caddy plugin | Invasive — shares process, bugs crash Caddy, requires rebuild on every update |
-| Separate backend (like CaddyManager) | Unnecessary — Caddy's Admin API already provides full CRUD |
-| **Static SPA** | ✓ Zero invasion, zero state, zero trust requirements |
+| Separate backend | Unnecessary — Caddy's Admin API already provides full CRUD |
+| **Static SPA** | Zero invasion, zero state, zero trust requirements |
 
 ### Key Principles
 
@@ -35,7 +32,7 @@ User Action → React Component → TanStack Query Mutation
                                         ↓
                               src/api/config.ts (typed client)
                                         ↓
-                              PUT /config/{path} or POST /load
+                              PUT/PATCH/POST/DELETE /config/{path}
                                         ↓
                               Caddy Admin API (localhost:2019)
                                         ↓
@@ -60,37 +57,9 @@ The UI itself has **no authentication logic**. Security is handled by Caddy:
 | URL state | React Router | Current page, site ID |
 | Form state | React Hook Form | Config editing forms |
 
-## Config Editing Model
+## Non-Goals
 
-Caddy's Admin API supports **path-based operations** on its JSON config tree:
-
-- `GET /config/apps/http/servers/srv0` → Read a specific server
-- `PUT /config/apps/http/servers/srv0/routes/0` → Replace a route
-- `DELETE /config/apps/http/servers/srv0` → Remove a server
-- `POST /load` → Replace the entire config
-
-The UI primarily uses surgical `PUT`/`DELETE` for individual changes and `POST /load` for bulk operations (like importing a Caddyfile).
-
-## Deployment
-
-```caddyfile
-your-domain.com {
-  handle /ui/* {
-    basic_auth {
-      admin $2a$14$hashed_password
-    }
-    uri strip_prefix /ui
-    file_server {
-      root /opt/caddy-ui/dist
-    }
-  }
-
-  handle /ui/api/* {
-    basic_auth {
-      admin $2a$14$hashed_password
-    }
-    uri strip_prefix /ui/api
-    reverse_proxy localhost:2019
-  }
-}
-```
+- No user/session management
+- No database or persistent storage
+- No server-side rendering
+- No multi-instance management

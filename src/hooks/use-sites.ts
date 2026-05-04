@@ -39,7 +39,7 @@ export function useUpdateSite() {
 
   return useMutation({
     mutationFn: async ({ id, server }: { id: string; server: HttpServer }) => {
-      await configApi.put(`apps/http/servers/${id}`, server);
+      await configApi.patch(`apps/http/servers/${id}`, server);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: configKeys.all });
