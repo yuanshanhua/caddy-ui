@@ -51,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/yuanshanhua/caddy-ui/master/deploy.
 安全模型简洁而稳健：
 
 - **HTTPS 强制** — 在 Caddyfile 中使用域名会触发 Caddy 的自动 TLS。这是保护 BasicAuth 凭据不被窃听的首要安全层。
-- **BasicAuth + bcrypt** — Caddy 的 `basicauth` 中间件保护整个子域名。密码以 bcrypt 哈希存储，绝不以明文形式保存。
+- **BasicAuth + bcrypt** — Caddy 的 `basic_auth` 中间件保护整个子域名。密码以 bcrypt 哈希存储，绝不以明文形式保存。
 - **Admin API 隔离** — Admin API 仅绑定到 `localhost:2019`，永远不直接暴露到互联网。所有访问都通过 Caddy 的认证反向代理。
 - **无自定义认证代码** — UI 本身没有任何认证逻辑。安全性完全委托给 Caddy 经过实战检验的中间件。
 - **建议 IP 限制** — 如需额外加固，可在 Caddyfile 中按来源 IP 限制访问。

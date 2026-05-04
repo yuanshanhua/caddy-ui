@@ -51,7 +51,7 @@ Run the deploy script again — it will detect the existing installation and off
 The security model is simple and robust:
 
 - **HTTPS enforced** — Using a domain name in your Caddyfile triggers Caddy's automatic TLS. This is the primary security layer protecting your BasicAuth credentials from being intercepted.
-- **BasicAuth with bcrypt** — Caddy's `basicauth` middleware protects the entire subdomain. Passwords are stored as bcrypt hashes, never in plaintext.
+- **BasicAuth with bcrypt** — Caddy's `basic_auth` middleware protects the entire subdomain. Passwords are stored as bcrypt hashes, never in plaintext.
 - **Admin API isolation** — The Admin API binds to `localhost:2019` only and is never directly exposed to the internet. All access goes through Caddy's authenticated reverse proxy.
 - **No custom auth code** — The UI has zero authentication logic of its own. Security is delegated entirely to Caddy's battle-tested middleware.
 - **Consider IP restrictions** — For additional hardening, restrict access by source IP in your Caddyfile.

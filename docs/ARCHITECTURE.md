@@ -46,7 +46,7 @@ User Action → React Component → TanStack Query Mutation
 
 The UI itself has **no authentication logic**. Security is handled by Caddy:
 
-1. Caddy's `basicauth` middleware protects `/ui/*` routes
+1. Caddy's `basic_auth` middleware protects the entire subdomain
 2. The Admin API runs on `localhost:2019` (not exposed externally)
 3. Caddy's `reverse_proxy` bridges the UI to the Admin API on same-origin
 4. No credentials are stored in the SPA
@@ -76,7 +76,7 @@ The UI primarily uses surgical `PUT`/`DELETE` for individual changes and `POST /
 ```caddyfile
 your-domain.com {
   handle /ui/* {
-    basicauth {
+    basic_auth {
       admin $2a$14$hashed_password
     }
     uri strip_prefix /ui
@@ -86,7 +86,7 @@ your-domain.com {
   }
 
   handle /ui/api/* {
-    basicauth {
+    basic_auth {
       admin $2a$14$hashed_password
     }
     uri strip_prefix /ui/api

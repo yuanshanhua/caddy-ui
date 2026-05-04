@@ -38,6 +38,7 @@ const DIRECTIVES = [
   "abort",
   "acme_server",
   "basicauth",
+  "basic_auth",
   "bind",
   "encode",
   "error",

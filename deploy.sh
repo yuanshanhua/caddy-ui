@@ -479,7 +479,7 @@ generate_caddyfile() {
 }
 
 ${DOMAIN} {
-    basicauth {
+    basic_auth {
         ${AUTH_USER} ${PASS_HASH}
     }
 

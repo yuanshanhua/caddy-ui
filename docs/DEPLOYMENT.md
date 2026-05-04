@@ -29,7 +29,7 @@ scp -r dist/ your-server:/opt/caddy-ui/dist
 }
 
 caddy.example.com {
-  basicauth {
+  basic_auth {
     # Generate hash: caddy hash-password
     admin $2a$14$YOUR_BCRYPT_HASH_HERE
   }
