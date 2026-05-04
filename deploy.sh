@@ -305,7 +305,7 @@ do_update() {
   echo ""
 
   # Ask user to confirm
-  read -rep "$(echo -e "${YELLOW}Do you want to update to $latest_version? [y/N]:${RESET} ")" confirm < /dev/tty
+  read -rp "$(echo -e "${YELLOW}Do you want to update to $latest_version? [y/N]:${RESET} ")" confirm
   if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     info "Update cancelled."
     exit 0
@@ -381,7 +381,7 @@ collect_params() {
 
   # Domain
   while true; do
-    read -rep "$(echo -e "${BLUE}Domain name${RESET} (e.g., example.com): ")" DOMAIN < /dev/tty
+    read -rp "$(echo -e "${BLUE}Domain name${RESET} (e.g., example.com): ")" DOMAIN
     if [[ -n "$DOMAIN" ]]; then
       # Basic validation - must look like a domain
       if echo "$DOMAIN" | grep -qE '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$'; then
@@ -395,13 +395,13 @@ collect_params() {
   done
 
   # Username
-  read -rep "$(echo -e "${BLUE}Username${RESET} [admin]: ")" AUTH_USER < /dev/tty
+  read -rp "$(echo -e "${BLUE}Username${RESET} [admin]: ")" AUTH_USER
   AUTH_USER="${AUTH_USER:-admin}"
 
   # Password
   while true; do
     echo -en "${BLUE}Password${RESET}: "
-    read -rs AUTH_PASS < /dev/tty
+    read -rs AUTH_PASS
     echo ""
 
     if [[ ${#AUTH_PASS} -lt 8 ]]; then
@@ -410,7 +410,7 @@ collect_params() {
     fi
 
     echo -en "${BLUE}Confirm password${RESET}: "
-    read -rs AUTH_PASS_CONFIRM < /dev/tty
+    read -rs AUTH_PASS_CONFIRM
     echo ""
 
     if [[ "$AUTH_PASS" != "$AUTH_PASS_CONFIRM" ]]; then
@@ -421,11 +421,11 @@ collect_params() {
   done
 
   # Admin API port
-  read -rep "$(echo -e "${BLUE}Admin API port${RESET} [$DEFAULT_ADMIN_PORT]: ")" ADMIN_PORT < /dev/tty
+  read -rp "$(echo -e "${BLUE}Admin API port${RESET} [$DEFAULT_ADMIN_PORT]: ")" ADMIN_PORT
   ADMIN_PORT="${ADMIN_PORT:-$DEFAULT_ADMIN_PORT}"
 
   # Caddyfile path
-  read -rep "$(echo -e "${BLUE}Caddyfile path${RESET} [$DEFAULT_CADDYFILE]: ")" CADDYFILE_PATH < /dev/tty
+  read -rp "$(echo -e "${BLUE}Caddyfile path${RESET} [$DEFAULT_CADDYFILE]: ")" CADDYFILE_PATH
   CADDYFILE_PATH="${CADDYFILE_PATH:-$DEFAULT_CADDYFILE}"
   # Expand ~ to $HOME
   if [[ "$CADDYFILE_PATH" == "~/"* ]]; then
@@ -445,7 +445,7 @@ collect_params() {
   echo -e "  Caddyfile:   ${GREEN}$CADDYFILE_PATH${RESET}"
   echo ""
 
-  read -rep "$(echo -e "${YELLOW}Proceed with these settings? [Y/n]:${RESET} ")" proceed < /dev/tty
+  read -rp "$(echo -e "${YELLOW}Proceed with these settings? [Y/n]:${RESET} ")" proceed
   if [[ "$proceed" == "n" || "$proceed" == "N" ]]; then
     info "Installation cancelled."
     exit 0
@@ -578,7 +578,7 @@ apply_config() {
     echo -e "${RED}${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${RED}Type ${BOLD}YES${RESET}${RED} (uppercase) to confirm overwrite, or anything else to cancel:${RESET}"
-    read -rep "> " overwrite_confirm < /dev/tty
+    read -rp "> " overwrite_confirm
 
     if [[ "$overwrite_confirm" != "YES" ]]; then
       warn "Overwrite cancelled."
@@ -777,6 +777,11 @@ main() {
     die "This script requires interactive input but no terminal is available."
   fi
 
+  # Reclaim stdin from pipe so all reads get the terminal with line-editing
+  if [[ ! -t 0 ]]; then
+    exec < /dev/tty
+  fi
+
   # Check prerequisites
   check_prerequisites
 
@@ -789,7 +794,7 @@ main() {
 
   # Default path has no install - ask user for their install directory
   echo ""
-  read -rep "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR < /dev/tty
+  read -rp "$(echo -e "${BLUE}Install directory${RESET} [$DEFAULT_INSTALL_DIR]: ")" INSTALL_DIR
   INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
   # Expand ~ to $HOME
   if [[ "$INSTALL_DIR" == "~/"* ]]; then
