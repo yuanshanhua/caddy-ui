@@ -57,25 +57,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Start Caddy
+      - name: Install Caddy
         run: |
-          echo '{"admin":{"listen":":2019","enforce_origin":false,"origins":["localhost:12019","localhost:2019"]}}' > /tmp/caddy.json
-          docker run -d --name caddy-test -p 12019:2019 \
-            -v /tmp/caddy.json:/etc/caddy/caddy.json:ro \
-            caddy:2 caddy run --config /etc/caddy/caddy.json
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:12019/config/ > /dev/null 2>&1; then
-              echo "Caddy is ready"
-              break
-            fi
-            sleep 1
-          done
+          curl -sL "https://caddyserver.com/api/download?os=linux&arch=amd64" -o /tmp/caddy
+          chmod +x /tmp/caddy
+          /tmp/caddy version
 
       - name: Run integration tests
         run: pnpm test:integration
-        env:
-          CADDY_TEST_URL: http://localhost:12019
-
-      - name: Stop Caddy
-        if: always()
-        run: docker rm -f caddy-test || true
