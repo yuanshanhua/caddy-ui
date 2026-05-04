@@ -35,7 +35,9 @@ caddy.example.com {
   # API reverse proxy → Caddy Admin API
   handle /api/* {
     uri strip_prefix /api
-    reverse_proxy localhost:2019
+    reverse_proxy localhost:2019 {
+      header_up Host localhost:2019
+    }
   }
 
   # Static files (SPA)
@@ -89,7 +91,9 @@ COPY Caddyfile /etc/caddy/Caddyfile
 
   handle /api/* {
     uri strip_prefix /api
-    reverse_proxy localhost:2019
+    reverse_proxy localhost:2019 {
+      header_up Host localhost:2019
+    }
   }
 
   handle {

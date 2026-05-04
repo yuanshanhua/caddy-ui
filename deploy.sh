@@ -486,7 +486,9 @@ ${DOMAIN} {
     # API reverse proxy → Caddy Admin API
     handle /api/* {
         uri strip_prefix /api
-        reverse_proxy localhost:${ADMIN_PORT}
+        reverse_proxy localhost:${ADMIN_PORT} {
+            header_up Host localhost:${ADMIN_PORT}
+        }
     }
 
     # Static files (SPA)
