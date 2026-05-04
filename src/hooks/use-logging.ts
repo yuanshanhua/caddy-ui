@@ -23,7 +23,7 @@ export function useUpsertLog() {
   return useMutation({
     mutationFn: async ({ name, log }: { name: string; log: LogConfig }) => {
       try {
-        await configApi.put(`logging/logs/${name}`, log);
+        await configApi.patch(`logging/logs/${name}`, log);
       } catch (err) {
         if (!(err instanceof CaddyApiError) || err.status !== 404) throw err;
         // logging.logs path doesn't exist — initialize it
