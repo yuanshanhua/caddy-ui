@@ -1,20 +1,22 @@
 # Deploying Caddy UI
 
 ## Prerequisites
-- A running Caddy server (v2.7+)
-- The `dist/` folder from `pnpm build`
+
+- Caddy server v2.7+
 - A dedicated subdomain (e.g., `caddy.example.com`)
 
 ## Quick Setup
 
 ### 1. Build the UI
+
 ```bash
-cd caddy-ui
+git clone https://github.com/yuanshanhua/caddy-ui && cd caddy-ui
 pnpm install
 pnpm build
 ```
 
 ### 2. Copy dist/ to your server
+
 ```bash
 scp -r dist/ your-server:/opt/caddy-ui/dist
 ```
@@ -51,11 +53,13 @@ caddy.example.com {
 ```
 
 ### 4. Reload Caddy
+
 ```bash
 caddy reload --config /etc/caddy/Caddyfile
 ```
 
 ### 5. Access the UI
+
 Navigate to `https://caddy.example.com/`
 
 ## Security Notes
@@ -64,6 +68,7 @@ Navigate to `https://caddy.example.com/`
 2. **Generate a strong password hash**: `caddy hash-password`
 3. **Admin API stays local** — only accessible via the reverse proxy, never exposed directly
 4. **Consider IP restrictions** if you want additional security:
+
    ```caddyfile
    @allowed remote_ip 10.0.0.0/8 192.168.0.0/16
    handle @allowed {
@@ -71,45 +76,10 @@ Navigate to `https://caddy.example.com/`
    }
    ```
 
-## Docker Deployment
-
-```dockerfile
-FROM caddy:2-alpine
-
-COPY dist/ /srv/caddy-ui/
-COPY Caddyfile /etc/caddy/Caddyfile
-```
-
-```caddyfile
-{
-  admin localhost:2019
-}
-
-:80 {
-  basicauth {
-    admin $2a$14$HASH
-  }
-
-  handle /api/* {
-    uri strip_prefix /api
-    reverse_proxy localhost:2019 {
-      header_up Host localhost:2019
-    }
-  }
-
-  handle {
-    root * /srv/caddy-ui
-    try_files {path} /index.html
-    file_server
-  }
-}
-```
-
 ## Upgrading
 
 To upgrade Caddy UI:
+
 1. Build the new version: `pnpm build`
 2. Replace the `dist/` folder on your server
 3. No Caddy restart needed — file_server serves the new files immediately
-
-This is the key advantage over a plugin-based approach: **zero downtime upgrades**.

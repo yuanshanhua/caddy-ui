@@ -45,10 +45,10 @@
 
 ## Phase 4: UX & Editor
 - [x] Internationalization (i18n) with react-i18next (English + Chinese)
-- [ ] Monaco editor integration (JSON + Caddyfile syntax highlighting)
-- [ ] Dark mode support
+- [x] Monaco editor integration (JSON + Caddyfile syntax highlighting)
+- [x] Dark mode support
 - [ ] Config history (IndexedDB snapshots with timestamps)
-- [ ] Export/import config backup (download/upload JSON)
+- [x] Export/import config backup (download/upload JSON)
 - [ ] Responsive design (mobile-friendly layout)
 - [ ] Keyboard shortcuts
 - [ ] Search across config
@@ -62,8 +62,7 @@
 - [ ] Config validation with helpful error messages
 
 ## Non-Goals (Explicit)
-- No user/session management (Caddy's basicauth handles this)
-- No database or persistent storage (Caddy IS the state)
+- No user/session management
+- No database or persistent storage
 - No server-side rendering
-- No mobile app (web-responsive is sufficient)
-- No multi-instance management (one UI per one Caddy)
+- No multi-instance management
