@@ -25,8 +25,8 @@ export function useUpsertLog() {
       try {
         await configApi.patch(`logging/logs/${name}`, log);
       } catch (err) {
-        if (!(err instanceof CaddyApiError) || err.status !== 404) throw err;
-        // logging.logs path doesn't exist — initialize it
+        if (!(err instanceof CaddyApiError)) throw err;
+        // logging or logging.logs doesn't exist — initialize via PUT
         const logs: Record<string, LogConfig> = { [name]: log };
         await configApi.put("logging", { logs });
       }

@@ -115,7 +115,10 @@ When the path may or may not exist:
 try {
   await configApi.patch(`logging/logs/${name}`, log);
 } catch (err) {
-  if (!(err instanceof CaddyApiError) || err.status !== 404) throw err;
+  // PATCH fails when the intermediate path (logging or logging.logs) doesn't exist.
+  // Caddy returns 500 "invalid traversal path" for missing intermediate keys,
+  // not 404 — so check instanceof CaddyApiError without filtering by status.
+  if (!(err instanceof CaddyApiError)) throw err;
   await configApi.put("logging", { logs: { [name]: log } });
 }
 ```
