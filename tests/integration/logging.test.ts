@@ -26,11 +26,14 @@ describe("Logging operations", () => {
       expect(log.level).toBe("DEBUG");
     });
 
-    it("PATCH on non-existent log path returns 404 (no logging configured)", async () => {
-      // No logging config exists — intermediate path doesn't exist
-      await expect(configApi.patch("logging/logs/newlog", SAMPLE_LOG)).rejects.toThrow(
-        CaddyApiError,
-      );
+    it("PATCH on non-existent log path fails when no logging configured", async () => {
+      // No logging config exists — intermediate path doesn't exist.
+      // Caddy returns 500 "invalid traversal path" (not 404) when intermediate keys are missing.
+      await expect(
+        configApi.patch("logging/logs/newlog", SAMPLE_LOG),
+      ).rejects.toSatisfy((err: unknown) => {
+        return err instanceof CaddyApiError;
+      });
     });
 
     it("PATCH on non-existent log name returns 404 when logging exists", async () => {

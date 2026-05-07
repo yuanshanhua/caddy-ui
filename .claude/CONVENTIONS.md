@@ -77,7 +77,7 @@ Key rules:
 See `docs/CADDY-API.md` for full reference. Summary:
 
 - **PUT** — Create new key. Returns 409 if exists.
-- **PATCH** — Replace existing key. Returns 404 if missing.
+- **PATCH** — Replace existing key. Returns 404 if key is missing, 500 if intermediate path is missing.
 - **POST** — Append to array.
 - **DELETE** — Remove key. Returns 404 if missing.
 
@@ -86,7 +86,10 @@ When a resource may or may not exist, use the upsert pattern:
 try {
   await configApi.patch(`path/to/resource`, data);
 } catch (err) {
-  if (!(err instanceof CaddyApiError) || err.status !== 404) throw err;
+  // Catch any CaddyApiError — Caddy returns different status codes
+  // for different "not found" cases (404 for missing key, 500 for
+  // missing intermediate path). Both mean the path needs initialization.
+  if (!(err instanceof CaddyApiError)) throw err;
   await configApi.put("parent/path", initialStructure);
 }
 ```

@@ -11,7 +11,7 @@ All config operations use the path `/config/{path...}` where path maps to JSON k
 | Method | Purpose | On success | On conflict |
 |--------|---------|-----------|-------------|
 | **PUT** | Create new key | 200 | **409** if key already exists |
-| **PATCH** | Replace existing key | 200 | **404** if key doesn't exist |
+| **PATCH** | Replace existing key | 200 | **404** if key doesn't exist, **500** if intermediate path missing |
 | **POST** | Append to array | 200 | Error if target is not an array |
 | **DELETE** | Remove key | 200 | **404** if key doesn't exist |
 | **GET** | Read value | 200 | **400** if intermediate path missing |
@@ -51,7 +51,7 @@ curl -X PATCH http://localhost:2019/config/apps/http/servers/srv0 \
   -d '{"listen": [":9090"], "routes": [...]}'
 ```
 
-Returns **404** "key does not exist" if the key isn't present. The value is **entirely replaced** — not merged. Callers must provide the complete object.
+Returns **404** "key does not exist" if the key isn't present, or **500** "invalid traversal path" if an intermediate path is missing. The value is **entirely replaced** — not merged. Callers must provide the complete object.
 
 ### POST /config/{path...}
 
@@ -115,7 +115,10 @@ When the path may or may not exist:
 try {
   await configApi.patch(`logging/logs/${name}`, log);
 } catch (err) {
-  if (!(err instanceof CaddyApiError) || err.status !== 404) throw err;
+  // PATCH fails when the intermediate path (logging or logging.logs) doesn't exist.
+  // Caddy returns 500 "invalid traversal path" for missing intermediate keys,
+  // not 404 — so check instanceof CaddyApiError without filtering by status.
+  if (!(err instanceof CaddyApiError)) throw err;
   await configApi.put("logging", { logs: { [name]: log } });
 }
 ```

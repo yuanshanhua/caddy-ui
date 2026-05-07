@@ -28,7 +28,7 @@ export function useAddTlsPolicy() {
         const existing = await configApi.get<AutomationPolicy[]>("apps/tls/automation/policies");
         await configApi.put(`apps/tls/automation/policies/${existing.length}`, policy);
       } catch (err) {
-        if (!(err instanceof CaddyApiError) || err.status !== 404) throw err;
+        if (!(err instanceof CaddyApiError)) throw err;
         // Path doesn't exist — initialize the full TLS automation structure
         const automation: TlsAutomation = { policies: [policy] };
         await configApi.put("apps/tls", { automation });

@@ -5,6 +5,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { CaddyApiError } from "@/api/client";
 import { configApi } from "@/api/config";
 import { configKeys, useConfig } from "@/hooks/use-config";
 import type { HttpServer } from "@/types/http-app";
@@ -68,7 +69,8 @@ export function useEnsureHttpApp() {
   return useCallback(async () => {
     try {
       await configApi.get("apps/http/servers");
-    } catch {
+    } catch (err) {
+      if (!(err instanceof CaddyApiError)) throw err;
       // Path doesn't exist, create it
       await configApi.put("apps/http", { servers: {} });
       void queryClient.invalidateQueries({ queryKey: configKeys.all });
