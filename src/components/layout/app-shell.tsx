@@ -5,6 +5,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
+import { useVersionCheck } from "@/hooks/use-version-check";
 import { cn } from "@/lib/utils";
 import { getVersionInfo } from "@/lib/version";
 import { useUiStore } from "@/stores/ui";
@@ -15,6 +16,7 @@ import { VersionInfo } from "./version-info";
 export function AppShell() {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const { i18n } = useTranslation();
+  const { data: updateInfo } = useVersionCheck();
 
   useEffect(() => {
     document.documentElement.lang = i18n.resolvedLanguage ?? "en";
@@ -33,9 +35,13 @@ export function AppShell() {
         <main className="bg-background p-6 flex-1">
           <Outlet />
         </main>
-        <footer className="border-t border-border/60 bg-background/80 px-6 py-2 backdrop-blur-lg">
-          <div className="flex justify-end">
-            <VersionInfo {...getVersionInfo()} />
+        <footer className="border-t border-border/60 bg-background/80 px-6 py-5 backdrop-blur-lg">
+          <div className="flex justify-center">
+            <VersionInfo
+              {...getVersionInfo()}
+              hasUpdate={updateInfo?.hasUpdate}
+              latestVersion={updateInfo?.latestVersion}
+            />
           </div>
         </footer>
       </div>
