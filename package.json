@@ -1,7 +1,7 @@
 {
   "name": "caddy-ui",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.2",
   "type": "module",
   "description": "A pure static SPA for managing Caddy web server via its Admin API",
   "scripts": {
