@@ -4,7 +4,7 @@
  * Supports:
  * - Basic matchers (host, path, method)
  * - Advanced matchers (header, query, remote_ip, protocol)
- * - Primary handler (reverse_proxy, file_server, static_response, redirect)
+ * - Primary handler (reverse_proxy, file_server, static_response, redirect, subroute)
  * - Middleware handlers (headers, encode, rewrite, authentication, CORS)
  */
 
@@ -20,6 +20,7 @@ import { EncodeForm } from "@/components/middleware/encode-form";
 import { HeadersForm } from "@/components/middleware/headers-form";
 import { RewriteForm } from "@/components/middleware/rewrite-form";
 import { ReverseProxyForm } from "@/components/proxy/reverse-proxy-form";
+import { SubrouteEditor } from "@/components/sites/subroute-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,9 +52,11 @@ interface RouteFormDialogProps {
   onSubmit: (route: HttpRoute) => void;
   loading?: boolean;
   initialRoute?: HttpRoute;
+  /** Hide the "subroute" handler option (used for nested routes within a subroute). */
+  hideSubroute?: boolean;
 }
 
-type HandlerType = "reverse_proxy" | "file_server" | "static_response" | "redir";
+type HandlerType = "reverse_proxy" | "file_server" | "static_response" | "redir" | "subroute";
 type MiddlewareType = "headers" | "encode" | "rewrite" | "authentication" | "cors";
 
 function parseInitialFormValues(route: HttpRoute | undefined): RouteFormValues {
@@ -91,6 +94,8 @@ function parseInitialFormValues(route: HttpRoute | undefined): RouteFormValues {
         staticBody = sr.body ?? "";
         staticStatus = String(sr.status_code ?? "200");
       }
+    } else if (handler.handler === "subroute") {
+      handlerType = "subroute";
     }
   }
 
@@ -114,6 +119,7 @@ export function RouteFormDialog({
   onSubmit,
   loading = false,
   initialRoute,
+  hideSubroute = false,
 }: RouteFormDialogProps) {
   const { t } = useTranslation("middleware");
   const { t: tc } = useTranslation();
@@ -124,6 +130,9 @@ export function RouteFormDialog({
     { value: "file_server", label: t("routeForm.handlerFileServer") },
     { value: "static_response", label: t("routeForm.handlerStaticResponse") },
     { value: "redir", label: t("routeForm.handlerRedirect") },
+    ...(hideSubroute
+      ? []
+      : [{ value: "subroute" as const, label: t("routeForm.handlerSubroute") }]),
   ];
 
   const MIDDLEWARE_OPTIONS: Array<{ value: MiddlewareType; label: string; description: string }> = [
@@ -171,6 +180,7 @@ export function RouteFormDialog({
   const [authHandler, setAuthHandler] = useState<AuthenticationHandler | undefined>();
   const [corsHandler, setCorsHandler] = useState<HeadersHandler | undefined>();
   const [expandedMiddleware, setExpandedMiddleware] = useState<MiddlewareType | null>(null);
+  const [subrouteRoutes, setSubrouteRoutes] = useState<HttpRoute[]>([]);
 
   // Initialize sub-form state when dialog opens
   // Using a stable key approach: reset sub-form state when open/initialRoute changes
@@ -230,6 +240,9 @@ export function RouteFormDialog({
         } else if (handler.handler === "authentication") {
           enabled.add("authentication");
           setAuthHandler(handler as AuthenticationHandler);
+        } else if (handler.handler === "subroute") {
+          const sr = handler as { routes?: HttpRoute[] };
+          setSubrouteRoutes(sr.routes ?? []);
         }
       }
       setEnabledMiddleware(enabled);
@@ -245,6 +258,7 @@ export function RouteFormDialog({
       setAuthHandler(undefined);
       setCorsHandler(undefined);
       setExpandedMiddleware(null);
+      setSubrouteRoutes([]);
     }
   }
 
@@ -332,6 +346,12 @@ export function RouteFormDialog({
           handler: "static_response" as const,
           status_code: values.redirStatus,
           headers: { Location: [values.redirUrl] },
+        });
+        break;
+      case "subroute":
+        handlers.push({
+          handler: "subroute" as const,
+          routes: subrouteRoutes,
         });
         break;
     }
@@ -458,75 +478,79 @@ export function RouteFormDialog({
               </div>
 
               {/* ===== MIDDLEWARE SECTION ===== */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold border-b pb-1">{t("routeForm.middleware")}</h4>
-                <p className="text-xs text-muted-foreground">
-                  {t("routeForm.middlewareDescription")}
-                </p>
+              {handlerType !== "subroute" && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold border-b pb-1">
+                    {t("routeForm.middleware")}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {t("routeForm.middlewareDescription")}
+                  </p>
 
-                <div className="space-y-2">
-                  {MIDDLEWARE_OPTIONS.map((mw) => (
-                    <div key={mw.value} className="border rounded-md">
-                      <div className="flex items-center gap-3 px-3 py-2">
-                        <input
-                          type="checkbox"
-                          id={`mw-${mw.value}`}
-                          checked={enabledMiddleware.has(mw.value)}
-                          onChange={() => toggleMiddleware(mw.value)}
-                          className="h-4 w-4 rounded border-input"
-                        />
-                        <button
-                          type="button"
-                          className="flex-1 flex items-center justify-between"
-                          onClick={() => {
-                            if (enabledMiddleware.has(mw.value)) {
-                              setExpandedMiddleware(
-                                expandedMiddleware === mw.value ? null : mw.value,
-                              );
-                            }
-                          }}
-                        >
-                          <div className="text-left">
-                            <Label
-                              htmlFor={`mw-${mw.value}`}
-                              className="font-medium text-sm cursor-pointer"
-                            >
-                              {mw.label}
-                            </Label>
-                            <p className="text-xs text-muted-foreground">{mw.description}</p>
-                          </div>
-                          {enabledMiddleware.has(mw.value) &&
-                            (expandedMiddleware === mw.value ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            ))}
-                        </button>
-                      </div>
-
-                      {enabledMiddleware.has(mw.value) && expandedMiddleware === mw.value && (
-                        <div className="px-3 pb-3 pt-1 border-t">
-                          {mw.value === "headers" && (
-                            <HeadersForm value={headersHandler} onChange={setHeadersHandler} />
-                          )}
-                          {mw.value === "encode" && (
-                            <EncodeForm value={encodeHandler} onChange={setEncodeHandler} />
-                          )}
-                          {mw.value === "rewrite" && (
-                            <RewriteForm value={rewriteHandler} onChange={setRewriteHandler} />
-                          )}
-                          {mw.value === "authentication" && (
-                            <BasicAuthForm value={authHandler} onChange={setAuthHandler} />
-                          )}
-                          {mw.value === "cors" && (
-                            <CorsForm value={corsHandler} onChange={setCorsHandler} />
-                          )}
+                  <div className="space-y-2">
+                    {MIDDLEWARE_OPTIONS.map((mw) => (
+                      <div key={mw.value} className="border rounded-md">
+                        <div className="flex items-center gap-3 px-3 py-2">
+                          <input
+                            type="checkbox"
+                            id={`mw-${mw.value}`}
+                            checked={enabledMiddleware.has(mw.value)}
+                            onChange={() => toggleMiddleware(mw.value)}
+                            className="h-4 w-4 rounded border-input"
+                          />
+                          <button
+                            type="button"
+                            className="flex-1 flex items-center justify-between"
+                            onClick={() => {
+                              if (enabledMiddleware.has(mw.value)) {
+                                setExpandedMiddleware(
+                                  expandedMiddleware === mw.value ? null : mw.value,
+                                );
+                              }
+                            }}
+                          >
+                            <div className="text-left">
+                              <Label
+                                htmlFor={`mw-${mw.value}`}
+                                className="font-medium text-sm cursor-pointer"
+                              >
+                                {mw.label}
+                              </Label>
+                              <p className="text-xs text-muted-foreground">{mw.description}</p>
+                            </div>
+                            {enabledMiddleware.has(mw.value) &&
+                              (expandedMiddleware === mw.value ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              ))}
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        {enabledMiddleware.has(mw.value) && expandedMiddleware === mw.value && (
+                          <div className="px-3 pb-3 pt-1 border-t">
+                            {mw.value === "headers" && (
+                              <HeadersForm value={headersHandler} onChange={setHeadersHandler} />
+                            )}
+                            {mw.value === "encode" && (
+                              <EncodeForm value={encodeHandler} onChange={setEncodeHandler} />
+                            )}
+                            {mw.value === "rewrite" && (
+                              <RewriteForm value={rewriteHandler} onChange={setRewriteHandler} />
+                            )}
+                            {mw.value === "authentication" && (
+                              <BasicAuthForm value={authHandler} onChange={setAuthHandler} />
+                            )}
+                            {mw.value === "cors" && (
+                              <CorsForm value={corsHandler} onChange={setCorsHandler} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* ===== PRIMARY HANDLER SECTION ===== */}
               <div className="space-y-3">
@@ -556,128 +580,138 @@ export function RouteFormDialog({
                   )}
                 />
 
-                {handlerType === "reverse_proxy" && (
-                  <div className="border rounded-md">
-                    <button
-                      type="button"
-                      className="flex items-center justify-between w-full px-3 py-2"
-                      onClick={() => setShowProxyConfig(!showProxyConfig)}
-                    >
-                      <span className="text-sm font-medium">{t("reverseProxy.title")}</span>
-                      {showProxyConfig ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                    {showProxyConfig && (
-                      <div className="px-3 pb-3 pt-1 border-t">
-                        <ReverseProxyForm
-                          value={reverseProxyHandler}
-                          onChange={setReverseProxyHandler}
-                        />
+                {handlerType === "subroute" && (
+                  <SubrouteEditor routes={subrouteRoutes} onChange={setSubrouteRoutes} />
+                )}
+
+                {handlerType !== "subroute" && (
+                  <>
+                    {handlerType === "reverse_proxy" && (
+                      <div className="border rounded-md">
+                        <button
+                          type="button"
+                          className="flex items-center justify-between w-full px-3 py-2"
+                          onClick={() => setShowProxyConfig(!showProxyConfig)}
+                        >
+                          <span className="text-sm font-medium">{t("reverseProxy.title")}</span>
+                          {showProxyConfig ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+                        {showProxyConfig && (
+                          <div className="px-3 pb-3 pt-1 border-t">
+                            <ReverseProxyForm
+                              value={reverseProxyHandler}
+                              onChange={setReverseProxyHandler}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {handlerType === "file_server" && (
-                  <FormField
-                    control={form.control}
-                    name="fileRoot"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <Label htmlFor="file-root">{t("routeForm.rootDirectory")}</Label>
-                        <FormControl>
-                          <Input
-                            id="file-root"
-                            placeholder={t("routeForm.rootPlaceholder")}
-                            {...field}
-                          />
-                        </FormControl>
-                      </FormItem>
+                    {handlerType === "file_server" && (
+                      <FormField
+                        control={form.control}
+                        name="fileRoot"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <Label htmlFor="file-root">{t("routeForm.rootDirectory")}</Label>
+                            <FormControl>
+                              <Input
+                                id="file-root"
+                                placeholder={t("routeForm.rootPlaceholder")}
+                                {...field}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
-                )}
 
-                {handlerType === "static_response" && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="staticStatus"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <Label htmlFor="static-status">{t("routeForm.statusCode")}</Label>
-                          <FormControl>
-                            <Input
-                              id="static-status"
-                              placeholder={t("routeForm.statusCodePlaceholder")}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="staticBody"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <Label htmlFor="static-body">{t("routeForm.responseBody")}</Label>
-                          <FormControl>
-                            <textarea
-                              id="static-body"
-                              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px] resize-y"
-                              placeholder={t("routeForm.responsePlaceholder")}
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
+                    {handlerType === "static_response" && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="staticStatus"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <Label htmlFor="static-status">{t("routeForm.statusCode")}</Label>
+                              <FormControl>
+                                <Input
+                                  id="static-status"
+                                  placeholder={t("routeForm.statusCodePlaceholder")}
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="staticBody"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <Label htmlFor="static-body">{t("routeForm.responseBody")}</Label>
+                              <FormControl>
+                                <textarea
+                                  id="static-body"
+                                  className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px] resize-y"
+                                  placeholder={t("routeForm.responsePlaceholder")}
+                                  {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
 
-                {handlerType === "redir" && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="redirUrl"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <Label htmlFor="redir-url">{t("routeForm.redirectUrl")}</Label>
-                          <FormControl>
-                            <Input
-                              id="redir-url"
-                              placeholder={t("routeForm.redirectPlaceholder")}
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="redirStatus"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <Label htmlFor="redir-status">{t("routeForm.redirectStatusCode")}</Label>
-                          <FormControl>
-                            <Select
-                              id="redir-status"
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            >
-                              <option value="301">{t("routeForm.redirect301")}</option>
-                              <option value="302">{t("routeForm.redirect302")}</option>
-                              <option value="307">{t("routeForm.redirect307")}</option>
-                              <option value="308">{t("routeForm.redirect308")}</option>
-                            </Select>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                    {handlerType === "redir" && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="redirUrl"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <Label htmlFor="redir-url">{t("routeForm.redirectUrl")}</Label>
+                              <FormControl>
+                                <Input
+                                  id="redir-url"
+                                  placeholder={t("routeForm.redirectPlaceholder")}
+                                  {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="redirStatus"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <Label htmlFor="redir-status">
+                                {t("routeForm.redirectStatusCode")}
+                              </Label>
+                              <FormControl>
+                                <Select
+                                  id="redir-status"
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                >
+                                  <option value="301">{t("routeForm.redirect301")}</option>
+                                  <option value="302">{t("routeForm.redirect302")}</option>
+                                  <option value="307">{t("routeForm.redirect307")}</option>
+                                  <option value="308">{t("routeForm.redirect308")}</option>
+                                </Select>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
                   </>
                 )}
               </div>

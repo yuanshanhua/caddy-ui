@@ -142,6 +142,7 @@
     "handlerFileServer": "File Server",
     "handlerStaticResponse": "Static Response",
     "handlerRedirect": "Redirect",
+    "handlerSubroute": "Subroute",
     "upstreams": "Upstreams (comma-separated)",
     "upstreamsPlaceholder": "localhost:3000, localhost:3001",
     "upstreamsHint": "Backend addresses to proxy to. Format: host:port",
@@ -192,6 +193,11 @@
     "excludePlaceholder": "http.log.access.log0",
     "addLog": "Add Log",
     "update": "Update"
+  },
+  "subroute": {
+    "nestedRoutes": "Nested Routes",
+    "addNestedRoute": "Add Nested Route",
+    "noNestedRoutes": "No nested routes. Click \"Add Nested Route\" to add one."
   },
   "reverseProxy": {
     "title": "Reverse Proxy Configuration",

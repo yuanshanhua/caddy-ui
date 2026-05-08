@@ -11,7 +11,7 @@ export const routeFormSchema = z.object({
   methods: z.string(),
 
   // Handler type
-  handlerType: z.enum(["reverse_proxy", "file_server", "static_response", "redir"]),
+  handlerType: z.enum(["reverse_proxy", "file_server", "static_response", "redir", "subroute"]),
   fileRoot: z.string(),
   staticBody: z.string(),
   staticStatus: z.string(),

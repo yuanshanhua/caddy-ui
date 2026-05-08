@@ -142,6 +142,7 @@
     "handlerFileServer": "文件服务器",
     "handlerStaticResponse": "静态响应",
     "handlerRedirect": "重定向",
+    "handlerSubroute": "子路由",
     "upstreams": "上游（逗号分隔）",
     "upstreamsPlaceholder": "localhost:3000, localhost:3001",
     "upstreamsHint": "要代理到的后端地址。格式：host:port",
@@ -192,6 +193,11 @@
     "excludePlaceholder": "http.log.access.log0",
     "addLog": "添加日志",
     "update": "更新"
+  },
+  "subroute": {
+    "nestedRoutes": "嵌套路由",
+    "addNestedRoute": "添加嵌套路由",
+    "noNestedRoutes": "暂无嵌套路由。点击\"添加嵌套路由\"进行添加。"
   },
   "reverseProxy": {
     "title": "反向代理配置",

@@ -229,13 +229,23 @@ export function SiteDetailPage() {
   function getRouteDescription(route: HttpRoute): { label: string; sublabel: string } {
     const hosts = route.match?.flatMap((m) => m.host ?? []) ?? [];
     const paths = route.match?.flatMap((m) => m.path ?? []) ?? [];
-    const handlers = route.handle?.map((h) => h.handler) ?? [];
 
     let label = t("catchAll");
     if (hosts.length > 0) label = hosts.join(", ");
     else if (paths.length > 0) label = paths.join(", ");
 
-    const sublabel = handlers.join(" → ") || t("noHandler");
+    const handlerNames: string[] = [];
+    for (const h of route.handle ?? []) {
+      if (h.handler === "subroute") {
+        const sr = h as { routes?: HttpRoute[] };
+        const count = sr.routes?.length ?? 0;
+        handlerNames.push(`${h.handler} (${count})`);
+      } else {
+        handlerNames.push(h.handler);
+      }
+    }
+
+    const sublabel = handlerNames.join(" → ") || t("noHandler");
     return { label, sublabel };
   }
 

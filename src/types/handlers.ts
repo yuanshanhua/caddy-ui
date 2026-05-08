@@ -6,6 +6,7 @@
  * for unknown/plugin handlers.
  */
 
+import type { HttpRoute } from "./http-app";
 import type { ReverseProxyHandler } from "./reverse-proxy";
 
 // --- Discriminated Union of All Known Handlers ---
@@ -15,6 +16,7 @@ export type HttpHandler =
   | FileServerHandler
   | StaticResponseHandler
   | RedirHandler
+  | SubrouteHandler
   | HeadersHandler
   | EncodeHandler
   | RewriteHandler
@@ -165,6 +167,13 @@ export interface BasicAuthAccount {
   username: string;
   password: string;
   salt?: string;
+}
+
+// --- Subroute ---
+
+export interface SubrouteHandler {
+  handler: "subroute";
+  routes: HttpRoute[];
 }
 
 // --- Escape hatch for unknown/plugin handlers ---
