@@ -22,6 +22,11 @@ export type HttpHandler =
   | RewriteHandler
   | TemplatesHandler
   | AuthenticationHandler
+  | RequestBodyHandler
+  | MapHandler
+  | PushHandler
+  | InterceptHandler
+  | TracingHandler
   | UnknownHandler;
 
 // --- File Server ---
@@ -174,6 +179,76 @@ export interface BasicAuthAccount {
 export interface SubrouteHandler {
   handler: "subroute";
   routes: HttpRoute[];
+}
+
+// --- Request Body ---
+
+export interface RequestBodyHandler {
+  handler: "request_body";
+  max_size?: number;
+  read_timeout?: number;
+  write_timeout?: number;
+  set?: string;
+}
+
+// --- Map ---
+
+export interface MapHandler {
+  handler: "map";
+  source?: string;
+  destinations?: string[];
+  mappings?: MapMapping[];
+  defaults?: string[];
+}
+
+export interface MapMapping {
+  input?: string;
+  input_regexp?: string;
+  outputs?: unknown[];
+}
+
+// --- HTTP/2 Server Push ---
+
+export interface PushHandler {
+  handler: "push";
+  resources?: PushResource[];
+  headers?: {
+    add?: Record<string, string[]>;
+    set?: Record<string, string[]>;
+    delete?: string[];
+    replace?: Record<string, HeaderReplacement[]>;
+  };
+}
+
+export interface PushResource {
+  method?: string;
+  target?: string;
+}
+
+// --- Intercept (response interception) ---
+
+export interface InterceptHandler {
+  handler: "intercept";
+  handle_response?: ResponseHandler[];
+}
+
+export interface ResponseHandler {
+  match?: ResponseMatcher[];
+  routes?: HttpRoute[];
+  status_code?: string | number;
+}
+
+export interface ResponseMatcher {
+  status?: number[];
+  headers?: Record<string, string[]>;
+}
+
+// --- Tracing (OpenTelemetry) ---
+
+export interface TracingHandler {
+  handler: "tracing";
+  span_name?: string;
+  custom_labels?: Record<string, string>;
 }
 
 // --- Escape hatch for unknown/plugin handlers ---

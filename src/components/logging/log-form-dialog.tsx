@@ -66,8 +66,16 @@ function parseInitialValues(name: string, log: LogConfig): LogFormValues {
   };
 }
 
-function toLogConfig(values: LogFormValues): LogConfig {
-  const writer: LogWriter = { output: values.outputType };
+function toLogConfig(values: LogFormValues, initialLog?: LogConfig): LogConfig {
+  // Start from existing config to preserve unknown fields
+  const log: LogConfig = initialLog ? { ...initialLog } : {};
+
+  log.level = values.level;
+  log.encoder = { ...initialLog?.encoder, format: values.encoderFormat };
+
+  const writer: LogWriter = initialLog?.writer
+    ? { ...initialLog.writer, output: values.outputType }
+    : { output: values.outputType };
   if (values.outputType === "file" && values.filename.trim()) {
     writer.filename = values.filename.trim();
     const sizeMb = Number.parseInt(values.rollSizeMb, 10);
@@ -77,24 +85,23 @@ function toLogConfig(values: LogFormValues): LogConfig {
     const keepDays = Number.parseInt(values.rollKeepDays, 10);
     if (!Number.isNaN(keepDays) && keepDays > 0) writer.roll_keep_days = keepDays;
   }
-
-  const log: LogConfig = {
-    writer,
-    level: values.level,
-    encoder: { format: values.encoderFormat },
-  };
+  log.writer = writer;
 
   if (values.includes.trim()) {
     log.include = values.includes
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
+  } else {
+    delete log.include;
   }
   if (values.excludes.trim()) {
     log.exclude = values.excludes
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
+  } else {
+    delete log.exclude;
   }
 
   return log;
@@ -126,7 +133,7 @@ export function LogFormDialog({
   const outputType = form.watch("outputType");
 
   function handleFormSubmit(values: LogFormValues) {
-    onSubmit(values.name.trim(), toLogConfig(values));
+    onSubmit(values.name.trim(), toLogConfig(values, initialLog));
   }
 
   return (

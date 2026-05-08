@@ -34,6 +34,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { extractUnknownHandlers } from "@/lib/route-handlers";
 import { type RouteFormValues, routeFormDefaults, routeFormSchema } from "@/lib/schemas/route";
 import type {
   AuthenticationHandler,
@@ -181,6 +182,7 @@ export function RouteFormDialog({
   const [corsHandler, setCorsHandler] = useState<HeadersHandler | undefined>();
   const [expandedMiddleware, setExpandedMiddleware] = useState<MiddlewareType | null>(null);
   const [subrouteRoutes, setSubrouteRoutes] = useState<HttpRoute[]>([]);
+  const [unknownHandlers, setUnknownHandlers] = useState<HttpHandler[]>([]);
 
   // Initialize sub-form state when dialog opens
   // Using a stable key approach: reset sub-form state when open/initialRoute changes
@@ -246,6 +248,8 @@ export function RouteFormDialog({
         }
       }
       setEnabledMiddleware(enabled);
+
+      setUnknownHandlers(extractUnknownHandlers(handlers));
     } else {
       setShowAdvancedMatchers(false);
       setAdvancedMatcher({});
@@ -259,6 +263,7 @@ export function RouteFormDialog({
       setCorsHandler(undefined);
       setExpandedMiddleware(null);
       setSubrouteRoutes([]);
+      setUnknownHandlers([]);
     }
   }
 
@@ -312,6 +317,8 @@ export function RouteFormDialog({
 
   function buildHandlers(values: RouteFormValues): HttpHandler[] {
     const handlers: HttpHandler[] = [];
+
+    handlers.push(...unknownHandlers);
 
     if (enabledMiddleware.has("authentication") && authHandler) handlers.push(authHandler);
     if (enabledMiddleware.has("rewrite") && rewriteHandler) handlers.push(rewriteHandler);

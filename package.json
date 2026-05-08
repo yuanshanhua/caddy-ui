@@ -19,7 +19,9 @@
     "deps:update:major": "ncu -u && pnpm install",
     "check": "pnpm lint && pnpm typecheck && pnpm i18n:ci",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:integration:watch": "vitest --config vitest.integration.config.ts"
+    "test:integration:watch": "vitest --config vitest.integration.config.ts",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:unit:watch": "vitest --config vitest.unit.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

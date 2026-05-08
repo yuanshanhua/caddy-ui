@@ -66,12 +66,24 @@ export function ServerFormDialog({
   const listenAddresses = form.watch("listenAddresses");
 
   function handleFormSubmit(values: ServerFormValues) {
-    const server: HttpServer = {
-      listen: values.listenAddresses.filter((a) => a.trim() !== ""),
-    };
+    // Start from existing server to preserve fields the form doesn't manage
+    const server: HttpServer = initialServer ? { ...initialServer } : {};
+
+    server.listen = values.listenAddresses.filter((a) => a.trim() !== "");
+
+    if (values.protocols.length > 0) {
+      server.protocols = values.protocols;
+    } else {
+      delete server.protocols;
+    }
 
     if (values.disableHttps) {
-      server.automatic_https = { disable: true };
+      server.automatic_https = { ...server.automatic_https, disable: true };
+    } else if (server.automatic_https) {
+      delete server.automatic_https.disable;
+      if (Object.keys(server.automatic_https).length === 0) {
+        delete server.automatic_https;
+      }
     }
 
     onSubmit(values.serverId.trim(), server);
