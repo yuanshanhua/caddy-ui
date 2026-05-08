@@ -34,8 +34,9 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { parseInitialFormValues } from "@/lib/route-form-helpers";
 import { extractUnknownHandlers } from "@/lib/route-handlers";
-import { type RouteFormValues, routeFormDefaults, routeFormSchema } from "@/lib/schemas/route";
+import { type RouteFormValues, routeFormSchema } from "@/lib/schemas/route";
 import type {
   AuthenticationHandler,
   EncodeHandler,
@@ -59,60 +60,6 @@ interface RouteFormDialogProps {
 
 type HandlerType = "reverse_proxy" | "file_server" | "static_response" | "redir" | "subroute";
 type MiddlewareType = "headers" | "encode" | "rewrite" | "authentication" | "cors";
-
-function parseInitialFormValues(route: HttpRoute | undefined): RouteFormValues {
-  if (!route) return routeFormDefaults;
-
-  const firstMatch = route.match?.[0];
-  const handlers = route.handle ?? [];
-
-  let handlerType: HandlerType = "reverse_proxy";
-  let fileRoot = "";
-  let staticBody = "";
-  let staticStatus = "200";
-  let redirUrl = "";
-  let redirStatus: RouteFormValues["redirStatus"] = "302";
-
-  for (const handler of handlers) {
-    if (handler.handler === "reverse_proxy") {
-      handlerType = "reverse_proxy";
-    } else if (handler.handler === "file_server") {
-      handlerType = "file_server";
-      const fs = handler as { root?: string };
-      fileRoot = fs.root ?? "";
-    } else if (handler.handler === "static_response") {
-      const sr = handler as {
-        headers?: Record<string, string[]>;
-        status_code?: string | number;
-        body?: string;
-      };
-      if (sr.headers?.["Location"]) {
-        handlerType = "redir";
-        redirUrl = sr.headers["Location"]?.[0] ?? "";
-        redirStatus = String(sr.status_code ?? "302") as RouteFormValues["redirStatus"];
-      } else {
-        handlerType = "static_response";
-        staticBody = sr.body ?? "";
-        staticStatus = String(sr.status_code ?? "200");
-      }
-    } else if (handler.handler === "subroute") {
-      handlerType = "subroute";
-    }
-  }
-
-  return {
-    hosts: firstMatch?.host?.join(", ") ?? "",
-    paths: firstMatch?.path?.join(", ") ?? "",
-    methods: firstMatch?.method?.join(", ") ?? "",
-    handlerType,
-    fileRoot,
-    staticBody,
-    staticStatus,
-    redirUrl,
-    redirStatus,
-    terminal: route.terminal ?? true,
-  };
-}
 
 export function RouteFormDialog({
   open,
@@ -160,7 +107,7 @@ export function RouteFormDialog({
     { value: "cors", label: t("routeForm.mwCors"), description: t("routeForm.mwCorsHint") },
   ];
 
-  // Form for direct fields (matchers, handler config, terminal)
+  // Form for direct fields (matchers, handler config, terminal).
   const form = useForm<RouteFormValues>({
     resolver: zodResolver(routeFormSchema),
     defaultValues: parseInitialFormValues(initialRoute),

@@ -98,17 +98,16 @@ describe("Site (HTTP server) operations", () => {
   });
 
   describe("useEnsureHttpApp pattern — initialize apps/http", () => {
-    it("PUT creates apps/http structure when it does not exist", async () => {
-      // Start with empty config (from beforeEach)
-      await configApi.put("apps/http", { servers: {} });
-
-      const http = await configApi.get<{ servers: Record<string, unknown> }>("apps/http");
-      expect(http.servers).toEqual({});
+    it("apps/http is initialized with non-privileged ports from test setup", async () => {
+      const http = await configApi.get<{ http_port: number; https_port: number }>("apps/http");
+      expect(http.http_port).toBe(18080);
+      expect(http.https_port).toBe(18443);
     });
 
-    it("GET apps/http/servers returns error when not initialized", async () => {
-      // On empty config, intermediate path doesn't exist → 400
-      await expect(configApi.get("apps/http/servers")).rejects.toThrow(CaddyApiError);
+    it("GET apps/http/servers returns null when http app exists but has no servers", async () => {
+      // apps.http is initialized (with http_port/https_port) but servers key doesn't exist yet
+      const servers = await configApi.get("apps/http/servers");
+      expect(servers).toBeNull();
     });
   });
 

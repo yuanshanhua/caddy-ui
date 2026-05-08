@@ -120,7 +120,6 @@ export function SubrouteEditor({ routes, onChange }: SubrouteEditorProps) {
         open={showNestedForm}
         onOpenChange={setShowNestedForm}
         onSubmit={handleAddNested}
-        hideSubroute
       />
 
       {/* Edit Nested Route Dialog */}
@@ -132,7 +131,6 @@ export function SubrouteEditor({ routes, onChange }: SubrouteEditorProps) {
         }}
         onSubmit={handleEditNested}
         initialRoute={editingNestedIndex !== null ? routes[editingNestedIndex] : undefined}
-        hideSubroute
       />
     </div>
   );

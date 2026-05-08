@@ -11,11 +11,18 @@ const PORT = process.env["CADDY_TEST_URL"]
 
 beforeEach(async () => {
   // Reset Caddy to a clean config before each test.
-  // We must preserve the admin block to keep Caddy listening on the test port.
+  // We must preserve the admin block and set non-privileged HTTP ports —
+  // otherwise Caddy defaults to http_port:80 which requires root on Linux.
   await configApi.load({
     admin: {
       listen: `localhost:${PORT}`,
       enforce_origin: false,
+    },
+    apps: {
+      http: {
+        http_port: 18080,
+        https_port: 18443,
+      },
     },
   });
 });
