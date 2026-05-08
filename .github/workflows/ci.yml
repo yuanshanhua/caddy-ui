@@ -35,8 +35,8 @@ jobs:
       - name: Build
         run: pnpm build
 
-  integration-test:
-    name: Integration Tests
+  test:
+    name: Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -63,5 +63,5 @@ jobs:
           chmod +x /tmp/caddy
           /tmp/caddy version
 
-      - name: Run integration tests
-        run: pnpm test:integration
+      - name: Run tests
+        run: pnpm test
