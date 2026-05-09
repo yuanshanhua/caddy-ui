@@ -182,7 +182,11 @@ describe("converters/rewrite", () => {
     const result = toRewrite(formValues, original);
 
     expect(result.uri).toBe("/new-path");
-    expect(result["query"]).toEqual({ set: [{ key: "v", val: "2" }] });
+    // eslint-disable-next-line -- accessing unmodeled field preserved via spread
+    const resultAny = result as unknown as Record<string, unknown>;
+    expect(resultAny["query"]).toEqual({
+      set: [{ key: "v", val: "2" }],
+    });
   });
 
   it("works without original", () => {
