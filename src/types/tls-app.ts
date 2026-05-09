@@ -62,6 +62,7 @@ export interface AutomationPolicy {
   storage?: { module: string; [key: string]: unknown };
   on_demand?: boolean;
   disable_ocsp_stapling?: boolean;
+  [key: string]: unknown;
 }
 
 export interface TlsIssuer {

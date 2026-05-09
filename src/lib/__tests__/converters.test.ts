@@ -16,7 +16,12 @@ import { parseHeaders, toHeaders } from "@/lib/converters/headers";
 import { parseReverseProxy, toReverseProxy } from "@/lib/converters/reverse-proxy";
 import { parseRewrite, toRewrite } from "@/lib/converters/rewrite";
 import { parsePolicy, toPolicy } from "@/lib/converters/tls-policy";
-import type { AuthenticationHandler, EncodeHandler, HeadersHandler, RewriteHandler } from "@/types/handlers";
+import type {
+  AuthenticationHandler,
+  EncodeHandler,
+  HeadersHandler,
+  RewriteHandler,
+} from "@/types/handlers";
 import type { ReverseProxyHandler } from "@/types/reverse-proxy";
 import type { AutomationPolicy } from "@/types/tls-app";
 
@@ -31,7 +36,11 @@ describe("converters/reverse-proxy", () => {
     const handler: ReverseProxyHandler = {
       handler: "reverse_proxy",
       upstreams: [{ dial: "localhost:3000", max_requests: 100 }],
-      load_balancing: { selection_policy: { policy: "least_conn" }, try_duration: "5s", retries: 3 },
+      load_balancing: {
+        selection_policy: { policy: "least_conn" },
+        try_duration: "5s",
+        retries: 3,
+      },
       health_checks: {
         active: { uri: "/health", interval: "10s", timeout: "3s" },
         passive: { max_fails: 5, fail_duration: "60s" },
@@ -66,8 +75,11 @@ describe("converters/reverse-proxy", () => {
 
     expect(result.flush_interval).toBe("100ms");
     expect(result.request_buffers).toBe(4096);
-    expect((result as Record<string, unknown>).stream_timeout).toBe("30s");
-    expect((result as Record<string, unknown>).dynamic_upstreams).toEqual({ source: "srv", name: "backend" });
+    expect(result["stream_timeout"]).toBe("30s");
+    expect(result["dynamic_upstreams"]).toEqual({
+      source: "srv",
+      name: "backend",
+    });
   });
 
   it("works without original (new handler)", () => {
@@ -161,16 +173,16 @@ describe("converters/rewrite", () => {
   });
 
   it("preserves query operations on roundtrip", () => {
-    const original: RewriteHandler = {
+    const original = {
       handler: "rewrite",
       uri: "/new-path",
       query: { set: [{ key: "v", val: "2" }] },
-    } as RewriteHandler & { query: unknown };
+    } as unknown as RewriteHandler;
     const formValues = parseRewrite(original);
     const result = toRewrite(formValues, original);
 
     expect(result.uri).toBe("/new-path");
-    expect((result as Record<string, unknown>).query).toEqual({ set: [{ key: "v", val: "2" }] });
+    expect(result["query"]).toEqual({ set: [{ key: "v", val: "2" }] });
   });
 
   it("works without original", () => {
@@ -197,7 +209,7 @@ describe("converters/headers", () => {
       handler: "headers",
       request: {
         add: { "X-Custom": ["value1"] },
-        set: { "Host": ["backend"] },
+        set: { Host: ["backend"] },
         delete: ["X-Forwarded-For"],
       },
     };
@@ -205,7 +217,9 @@ describe("converters/headers", () => {
     expect(result.requestHeaders).toHaveLength(3);
     expect(result.requestHeaders.find((h) => h.operation === "add")?.name).toBe("X-Custom");
     expect(result.requestHeaders.find((h) => h.operation === "set")?.name).toBe("Host");
-    expect(result.requestHeaders.find((h) => h.operation === "delete")?.name).toBe("X-Forwarded-For");
+    expect(result.requestHeaders.find((h) => h.operation === "delete")?.name).toBe(
+      "X-Forwarded-For",
+    );
   });
 
   it("preserves replace operations on roundtrip", () => {
@@ -213,13 +227,13 @@ describe("converters/headers", () => {
       handler: "headers",
       request: {
         set: { "X-Real-IP": ["{remote_host}"] },
-        replace: { "Cookie": [{ search: "session=", replace: "" }] },
+        replace: { Cookie: [{ search: "session=", replace: "" }] },
       },
     };
     const formValues = parseHeaders(original);
     const result = toHeaders(formValues, original);
 
-    expect(result.request?.replace).toEqual({ "Cookie": [{ search: "session=", replace: "" }] });
+    expect(result.request?.replace).toEqual({ Cookie: [{ search: "session=", replace: "" }] });
     expect(result.request?.set).toEqual({ "X-Real-IP": ["{remote_host}"] });
   });
 
@@ -278,7 +292,9 @@ describe("converters/basic-auth", () => {
     const result = toBasicAuth(formValues, original);
 
     expect(result.providers?.http_basic?.hash).toEqual({ algorithm: "scrypt", n: 32768 });
-    expect((result.providers?.http_basic as Record<string, unknown>)?.hash_cache).toEqual({ capacity: 100 });
+    expect((result.providers?.http_basic as Record<string, unknown>)?.["hash_cache"]).toEqual({
+      capacity: 100,
+    });
   });
 
   it("preserves other auth providers on roundtrip", () => {
@@ -295,7 +311,9 @@ describe("converters/basic-auth", () => {
     const formValues = parseBasicAuth(original);
     const result = toBasicAuth(formValues, original);
 
-    expect((result.providers as Record<string, unknown>)?.jwt).toEqual({ token_source: "header" });
+    expect((result.providers as Record<string, unknown>)?.["jwt"]).toEqual({
+      token_source: "header",
+    });
   });
 });
 
@@ -404,7 +422,7 @@ describe("converters/tls-policy", () => {
     expect(result.storage).toEqual({ module: "consul", address: "localhost:8500" });
     expect(result.renewal_window_ratio).toBe(0.5);
     expect(result.disable_ocsp_stapling).toBe(true);
-    expect(result.reuse_private_keys).toBe(true);
+    expect(result["reuse_private_keys"]).toBe(true);
   });
 
   it("clears fields when form values are empty", () => {
