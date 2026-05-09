@@ -13,78 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  type BasicAuthFormValues,
-  basicAuthFormDefaults,
-  basicAuthFormSchema,
-} from "@/lib/schemas/middleware";
-import type { AuthenticationHandler, BasicAuthAccount } from "@/types/handlers";
+import { generateAuthId, isBcryptHash, parseBasicAuth, toBasicAuth } from "@/lib/converters";
+import { type BasicAuthFormValues, basicAuthFormSchema } from "@/lib/schemas/middleware";
+import type { AuthenticationHandler } from "@/types/handlers";
 
 interface BasicAuthFormProps {
   value?: AuthenticationHandler;
   onChange: (handler: AuthenticationHandler) => void;
-}
-
-let nextId = 0;
-function generateId(): string {
-  return `auth-${++nextId}-${Date.now()}`;
-}
-
-function isBcryptHash(str: string): boolean {
-  return /^\$2[aby]?\$\d{2}\$.{53}$/.test(str);
-}
-
-function parseInitialValues(handler: AuthenticationHandler | undefined): BasicAuthFormValues {
-  if (!handler?.providers?.http_basic) return basicAuthFormDefaults;
-
-  const basic = handler.providers.http_basic;
-  const parsed =
-    basic.accounts?.map((acc) => ({
-      id: generateId(),
-      username: acc.username,
-      password: acc.password,
-      isHashed: isBcryptHash(acc.password),
-    })) ?? [];
-
-  return {
-    accounts:
-      parsed.length > 0
-        ? parsed
-        : [{ id: generateId(), username: "", password: "", isHashed: false }],
-    realm: basic.realm ?? "",
-  };
-}
-
-function toHandler(
-  values: BasicAuthFormValues,
-  original?: AuthenticationHandler,
-): AuthenticationHandler {
-  const validAccounts: BasicAuthAccount[] = values.accounts
-    .filter((a) => a.username.trim() && a.password.trim())
-    .map((a) => ({
-      username: a.username.trim(),
-      password: a.password,
-    }));
-
-  // Preserve the original hash config if present, otherwise default to bcrypt
-  const originalBasic = original?.providers?.http_basic;
-  const hash = originalBasic?.hash ?? { algorithm: "bcrypt" };
-
-  const httpBasic = {
-    ...originalBasic,
-    hash,
-    accounts: validAccounts,
-    realm: values.realm.trim() || undefined,
-  };
-
-  return {
-    ...original,
-    handler: "authentication",
-    providers: {
-      ...original?.providers,
-      http_basic: httpBasic,
-    },
-  };
 }
 
 export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
@@ -92,7 +27,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
 
   const form = useForm<BasicAuthFormValues>({
     resolver: zodResolver(basicAuthFormSchema),
-    defaultValues: parseInitialValues(value),
+    defaultValues: parseBasicAuth(value),
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -107,13 +42,13 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
       isInternalChange.current = false;
       return;
     }
-    form.reset(parseInitialValues(value));
+    form.reset(parseBasicAuth(value));
   }, [value, form]);
 
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values, value));
+    onChange(toBasicAuth(values, value));
   }
 
   return (
@@ -156,7 +91,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
               variant="outline"
               size="sm"
               onClick={() => {
-                append({ id: generateId(), username: "", password: "", isHashed: false });
+                append({ id: generateAuthId(), username: "", password: "", isHashed: false });
               }}
             >
               <Plus className="h-3 w-3" />
@@ -229,7 +164,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
                         remove(idx);
                       } else {
                         form.setValue("accounts.0", {
-                          id: generateId(),
+                          id: generateAuthId(),
                           username: "",
                           password: "",
                           isHashed: false,

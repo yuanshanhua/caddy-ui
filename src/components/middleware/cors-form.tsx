@@ -11,7 +11,8 @@ import { useTranslation } from "react-i18next";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { type CorsFormValues, corsFormDefaults, corsFormSchema } from "@/lib/schemas/middleware";
+import { parseCors, toCors } from "@/lib/converters";
+import { type CorsFormValues, corsFormSchema } from "@/lib/schemas/middleware";
 import type { HeadersHandler } from "@/types/handlers";
 
 interface CorsFormProps {
@@ -19,78 +20,12 @@ interface CorsFormProps {
   onChange: (handler: HeadersHandler) => void;
 }
 
-const DEFAULT_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
-const DEFAULT_HEADERS = "Content-Type, Authorization";
-const DEFAULT_MAX_AGE = "86400";
-
-const CORS_HEADER_KEYS = new Set([
-  "Access-Control-Allow-Origin",
-  "Access-Control-Allow-Methods",
-  "Access-Control-Allow-Headers",
-  "Access-Control-Max-Age",
-  "Access-Control-Expose-Headers",
-  "Access-Control-Allow-Credentials",
-]);
-
-function parseCorsFromHeaders(handler: HeadersHandler | undefined): CorsFormValues {
-  if (!handler?.response?.set) return corsFormDefaults;
-
-  const set = handler.response.set;
-  return {
-    origins: set["Access-Control-Allow-Origin"]?.join(", ") ?? "*",
-    methods: set["Access-Control-Allow-Methods"]?.join(", ") ?? DEFAULT_METHODS,
-    headers: set["Access-Control-Allow-Headers"]?.join(", ") ?? DEFAULT_HEADERS,
-    exposeHeaders: set["Access-Control-Expose-Headers"]?.join(", ") ?? "",
-    maxAge: set["Access-Control-Max-Age"]?.[0] ?? DEFAULT_MAX_AGE,
-    credentials: set["Access-Control-Allow-Credentials"]?.[0] === "true",
-  };
-}
-
-function toHandler(values: CorsFormValues, original?: HeadersHandler): HeadersHandler {
-  const corsHeaders: Record<string, string[]> = {
-    "Access-Control-Allow-Origin": [values.origins.trim() || "*"],
-    "Access-Control-Allow-Methods": [values.methods.trim() || DEFAULT_METHODS],
-    "Access-Control-Allow-Headers": [values.headers.trim() || DEFAULT_HEADERS],
-  };
-
-  if (values.maxAge.trim()) {
-    corsHeaders["Access-Control-Max-Age"] = [values.maxAge.trim()];
-  }
-
-  if (values.exposeHeaders.trim()) {
-    corsHeaders["Access-Control-Expose-Headers"] = [values.exposeHeaders.trim()];
-  }
-
-  if (values.credentials) {
-    corsHeaders["Access-Control-Allow-Credentials"] = ["true"];
-  }
-
-  const preservedSet: Record<string, string[]> = {};
-  if (original?.response?.set) {
-    for (const [key, val] of Object.entries(original.response.set)) {
-      if (!CORS_HEADER_KEYS.has(key)) {
-        preservedSet[key] = val;
-      }
-    }
-  }
-
-  return {
-    ...original,
-    handler: "headers",
-    response: {
-      ...original?.response,
-      set: { ...preservedSet, ...corsHeaders },
-      deferred: true,
-    },
-  };
-}
-
 export function CorsForm({ value, onChange }: CorsFormProps) {
   const { t } = useTranslation("middleware");
 
   const form = useForm<CorsFormValues>({
     resolver: zodResolver(corsFormSchema),
-    defaultValues: parseCorsFromHeaders(value),
+    defaultValues: parseCors(value),
   });
 
   // Sync external value changes (skip when change originated from this form)
@@ -100,7 +35,7 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
       isInternalChange.current = false;
       return;
     }
-    form.reset(parseCorsFromHeaders(value));
+    form.reset(parseCors(value));
   }, [value, form]);
 
   const credentials = form.watch("credentials");
@@ -109,7 +44,7 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values, value));
+    onChange(toCors(values, value));
   }
 
   return (

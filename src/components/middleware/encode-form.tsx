@@ -11,11 +11,8 @@ import { useTranslation } from "react-i18next";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  type EncodeFormValues,
-  encodeFormDefaults,
-  encodeFormSchema,
-} from "@/lib/schemas/middleware";
+import { parseEncode, toEncode } from "@/lib/converters";
+import { type EncodeFormValues, encodeFormSchema } from "@/lib/schemas/middleware";
 import type { EncodeHandler } from "@/types/handlers";
 
 interface EncodeFormProps {
@@ -23,56 +20,12 @@ interface EncodeFormProps {
   onChange: (handler: EncodeHandler) => void;
 }
 
-function parseInitialValues(handler: EncodeHandler | undefined): EncodeFormValues {
-  if (!handler) return encodeFormDefaults;
-  const encodings = handler.encodings ?? {};
-  return {
-    gzipEnabled: Object.hasOwn(encodings, "gzip"),
-    zstdEnabled: Object.hasOwn(encodings, "zstd"),
-    minLength: handler.minimum_length ? String(handler.minimum_length) : "256",
-    prefer: handler.prefer ?? ["zstd", "gzip"],
-  };
-}
-
-function toHandler(values: EncodeFormValues, original?: EncodeHandler): EncodeHandler {
-  const encodings: Record<string, Record<string, unknown>> = {};
-  if (values.gzipEnabled) encodings["gzip"] = original?.encodings?.["gzip"] ?? {};
-  if (values.zstdEnabled) encodings["zstd"] = original?.encodings?.["zstd"] ?? {};
-
-  // Preserve plugin encodings (e.g., brotli) that the form doesn't manage
-  if (original?.encodings) {
-    for (const [key, val] of Object.entries(original.encodings)) {
-      if (key !== "gzip" && key !== "zstd") {
-        encodings[key] = val;
-      }
-    }
-  }
-
-  const handler: EncodeHandler = {
-    ...original,
-    handler: "encode",
-    encodings,
-    prefer: values.prefer.filter(
-      (p) => (p === "gzip" && values.gzipEnabled) || (p === "zstd" && values.zstdEnabled),
-    ),
-  };
-
-  const minVal = Number.parseInt(values.minLength, 10);
-  if (!Number.isNaN(minVal) && minVal > 0) {
-    handler.minimum_length = minVal;
-  } else {
-    delete handler.minimum_length;
-  }
-
-  return handler;
-}
-
 export function EncodeForm({ value, onChange }: EncodeFormProps) {
   const { t } = useTranslation("middleware");
 
   const form = useForm<EncodeFormValues>({
     resolver: zodResolver(encodeFormSchema),
-    defaultValues: parseInitialValues(value),
+    defaultValues: parseEncode(value),
   });
 
   // Sync external value changes (skip when change originated from this form)
@@ -82,7 +35,7 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
       isInternalChange.current = false;
       return;
     }
-    form.reset(parseInitialValues(value));
+    form.reset(parseEncode(value));
   }, [value, form]);
 
   const gzipEnabled = form.watch("gzipEnabled");
@@ -92,7 +45,7 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values, value));
+    onChange(toEncode(values, value));
   }
 
   return (
