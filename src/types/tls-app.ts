@@ -1,5 +1,19 @@
 /**
  * TLS App configuration types.
+ *
+ * Source refs:
+ * - TlsApp (TLS)            → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/tls.go (TLS struct)
+ * - TlsCertificates         → Module map under tls.certificates namespace
+ *   - automate              → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/tls.go (AutomateLoader)
+ *   - load_files            → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/fileloader.go
+ *   - load_pem              → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/pemloader.go
+ *   - load_folders           → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/folderloader.go
+ * - TlsAutomation           → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/automation.go (AutomationConfig struct)
+ * - AutomationPolicy        → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/automation.go (AutomationPolicy struct)
+ * - TlsIssuer (ACMEIssuer)  → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/acmeissuer.go
+ * - AcmeChallenges          → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/automation.go (ChallengesConfig struct)
+ * - SessionTickets          → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/sessiontickets.go
+ * - OnDemandConfig          → https://github.com/caddyserver/caddy/blob/master/modules/caddytls/ondemand.go
  */
 
 export interface TlsApp {
@@ -8,6 +22,7 @@ export interface TlsApp {
   session_tickets?: SessionTickets;
   cache?: TlsCache;
   disable_ocsp_stapling?: boolean;
+  [key: string]: unknown;
 }
 
 export interface TlsCertificates {
@@ -60,7 +75,7 @@ export interface TlsIssuer {
 
 export interface AcmeChallenges {
   http?: AcmeHttpChallenge;
-  tls_alpn?: AcmeTlsAlpnChallenge;
+  "tls-alpn"?: AcmeTlsAlpnChallenge;
   dns?: AcmeDnsChallenge;
   bind_host?: string;
 }

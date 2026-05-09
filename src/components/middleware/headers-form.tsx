@@ -97,17 +97,36 @@ function parseInitialValues(handler: HeadersHandler | undefined): HeadersFormVal
   };
 }
 
-function toHandler(values: HeadersFormValues): HeadersHandler {
-  const handler: HeadersHandler = { handler: "headers" };
+function toHandler(values: HeadersFormValues, original?: HeadersHandler): HeadersHandler {
+  const handler: HeadersHandler = { ...original, handler: "headers" };
 
   const requestOps = buildHeaderOps(values.requestHeaders);
-  if (requestOps) handler.request = requestOps;
+  if (requestOps) {
+    handler.request = { ...original?.request, ...requestOps };
+  } else if (original?.request?.replace) {
+    handler.request = { replace: original.request.replace };
+  } else {
+    delete handler.request;
+  }
 
   const responseOps = buildHeaderOps(values.responseHeaders);
   if (responseOps) {
-    const respOps: RespHeaderOps = { ...responseOps };
+    const respOps: RespHeaderOps = { ...original?.response, ...responseOps };
+    if (values.responseDeferred) {
+      respOps.deferred = true;
+    } else {
+      delete respOps.deferred;
+    }
+    handler.response = respOps;
+  } else if (original?.response?.replace || original?.response?.require) {
+    const respOps: RespHeaderOps = {
+      replace: original.response.replace,
+      require: original.response.require,
+    };
     if (values.responseDeferred) respOps.deferred = true;
     handler.response = respOps;
+  } else {
+    delete handler.response;
   }
 
   return handler;
@@ -141,7 +160,7 @@ export function HeadersForm({ value, onChange }: HeadersFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values));
+    onChange(toHandler(values, value));
   }
 
   return (

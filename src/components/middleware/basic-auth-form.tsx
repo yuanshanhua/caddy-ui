@@ -55,7 +55,10 @@ function parseInitialValues(handler: AuthenticationHandler | undefined): BasicAu
   };
 }
 
-function toHandler(values: BasicAuthFormValues): AuthenticationHandler {
+function toHandler(
+  values: BasicAuthFormValues,
+  original?: AuthenticationHandler,
+): AuthenticationHandler {
   const validAccounts: BasicAuthAccount[] = values.accounts
     .filter((a) => a.username.trim() && a.password.trim())
     .map((a) => ({
@@ -63,14 +66,23 @@ function toHandler(values: BasicAuthFormValues): AuthenticationHandler {
       password: a.password,
     }));
 
+  // Preserve the original hash config if present, otherwise default to bcrypt
+  const originalBasic = original?.providers?.http_basic;
+  const hash = originalBasic?.hash ?? { algorithm: "bcrypt" };
+
+  const httpBasic = {
+    ...originalBasic,
+    hash,
+    accounts: validAccounts,
+    realm: values.realm.trim() || undefined,
+  };
+
   return {
+    ...original,
     handler: "authentication",
     providers: {
-      http_basic: {
-        hash: { algorithm: "bcrypt" },
-        accounts: validAccounts,
-        ...(values.realm.trim() ? { realm: values.realm.trim() } : {}),
-      },
+      ...original?.providers,
+      http_basic: httpBasic,
     },
   };
 }
@@ -101,7 +113,7 @@ export function BasicAuthForm({ value, onChange }: BasicAuthFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values));
+    onChange(toHandler(values, value));
   }
 
   return (

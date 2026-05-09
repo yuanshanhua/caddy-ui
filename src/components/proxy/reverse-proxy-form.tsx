@@ -66,55 +66,105 @@ function parseInitialValues(handler: ReverseProxyHandler | undefined): ReversePr
   };
 }
 
-function toHandler(values: ReverseProxyFormValues): ReverseProxyHandler {
-  const handler: ReverseProxyHandler = {
-    handler: "reverse_proxy",
-    upstreams: values.upstreams
-      .filter((u) => u.dial.trim())
-      .map((u) => ({
-        dial: u.dial.trim(),
-        ...(u.maxRequests ? { max_requests: Number.parseInt(u.maxRequests, 10) } : {}),
-      })),
-  };
+function toHandler(
+  values: ReverseProxyFormValues,
+  original?: ReverseProxyHandler,
+): ReverseProxyHandler {
+  const handler: ReverseProxyHandler = { ...original, handler: "reverse_proxy" };
+
+  handler.upstreams = values.upstreams
+    .filter((u) => u.dial.trim())
+    .map((u) => ({
+      dial: u.dial.trim(),
+      ...(u.maxRequests ? { max_requests: Number.parseInt(u.maxRequests, 10) } : {}),
+    }));
 
   if (values.lbPolicy !== "round_robin" || values.tryDuration || values.retries) {
     handler.load_balancing = {
+      ...original?.load_balancing,
       selection_policy: { policy: values.lbPolicy },
       ...(values.tryDuration ? { try_duration: values.tryDuration } : {}),
       ...(values.retries ? { retries: Number.parseInt(values.retries, 10) } : {}),
     };
+  } else {
+    delete handler.load_balancing;
   }
 
   if (values.healthEnabled || values.passiveEnabled) {
-    handler.health_checks = {};
+    handler.health_checks = { ...original?.health_checks };
     if (values.healthEnabled) {
       handler.health_checks.active = {
+        ...original?.health_checks?.active,
         uri: values.healthUri,
         interval: values.healthInterval,
         timeout: values.healthTimeout,
       };
+    } else {
+      delete handler.health_checks.active;
     }
     if (values.passiveEnabled) {
       handler.health_checks.passive = {
+        ...original?.health_checks?.passive,
         max_fails: Number.parseInt(values.maxFails, 10),
         fail_duration: values.failDuration,
       };
+    } else {
+      delete handler.health_checks.passive;
     }
+  } else {
+    delete handler.health_checks;
   }
 
   if (values.disableXForwarded) {
     handler.headers = {
+      ...original?.headers,
       request: {
+        ...original?.headers?.request,
         delete: ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host"],
       },
     };
+  } else if (original?.headers) {
+    const existingDeletes = original.headers.request?.delete?.filter(
+      (h) => !["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host"].includes(h),
+    );
+    if (existingDeletes?.length || original.headers.request?.add || original.headers.request?.set) {
+      handler.headers = {
+        ...original.headers,
+        request: {
+          ...original.headers.request,
+          delete: existingDeletes?.length ? existingDeletes : undefined,
+        },
+      };
+    } else if (original.headers.response) {
+      handler.headers = { ...original.headers };
+      delete handler.headers.request;
+    } else {
+      delete handler.headers;
+    }
+  } else {
+    delete handler.headers;
   }
 
   if (values.insecureSkipVerify) {
     handler.transport = {
-      protocol: "http",
-      tls: { insecure_skip_verify: true },
+      ...original?.transport,
+      protocol: original?.transport?.protocol ?? "http",
+      tls: { ...original?.transport?.tls, insecure_skip_verify: true },
     };
+  } else if (original?.transport) {
+    const tls = original.transport.tls ? { ...original.transport.tls } : undefined;
+    if (tls) {
+      delete tls.insecure_skip_verify;
+      if (Object.keys(tls).length === 0) {
+        handler.transport = { ...original.transport };
+        delete handler.transport.tls;
+      } else {
+        handler.transport = { ...original.transport, tls };
+      }
+    }
+    // transport may still have plugin fields (resolver, keep_alive, etc.)
+  } else {
+    delete handler.transport;
   }
 
   return handler;
@@ -149,7 +199,7 @@ export function ReverseProxyForm({ value, onChange }: ReverseProxyFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values));
+    onChange(toHandler(values, value));
   }
 
   return (

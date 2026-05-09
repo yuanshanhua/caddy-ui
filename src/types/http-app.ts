@@ -3,6 +3,14 @@
  *
  * This is the most complex part of Caddy's config — it defines servers,
  * routes, matchers, and handlers.
+ *
+ * Source refs:
+ * - HttpApp         → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/app.go (App struct)
+ * - HttpServer      → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/server.go (Server struct)
+ * - HttpRoute       → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/routes.go (Route struct)
+ * - AutomaticHttps  → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/autohttps.go (AutoHTTPSConfig struct)
+ * - ServerLogConfig → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/logging.go (ServerLogConfig struct)
+ * - TrustedProxies  → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/server.go (TrustedProxiesRaw field)
  */
 
 import type { HttpHandler } from "./handlers";
@@ -14,6 +22,7 @@ export interface HttpApp {
   grace_period?: string;
   shutdown_delay?: string;
   servers?: Record<string, HttpServer>;
+  [key: string]: unknown;
 }
 
 export interface HttpServer {
@@ -31,6 +40,7 @@ export interface HttpServer {
   strict_sni_host?: boolean;
   trusted_proxies?: TrustedProxies;
   logs?: ServerLogConfig;
+  [key: string]: unknown;
 }
 
 export interface HttpRoute {

@@ -4,6 +4,21 @@
  * Each handler module in Caddy is identified by its handler name.
  * We model known handlers as specific interfaces and provide an escape hatch
  * for unknown/plugin handlers.
+ *
+ * Source refs:
+ * - FileServerHandler      → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/fileserver/staticfiles.go (FileServer struct)
+ * - StaticResponseHandler  → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/staticresp.go (StaticResponse struct)
+ * - HeadersHandler         → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/headers/headers.go (Handler struct)
+ * - EncodeHandler          → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/encode/encode.go (Encode struct)
+ * - RewriteHandler         → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/rewrite/rewrite.go (Rewrite struct)
+ * - TemplatesHandler       → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/templates/templates.go (Templates struct)
+ * - AuthenticationHandler  → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/caddyauth/caddyauth.go (Authentication struct)
+ * - SubrouteHandler        → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/subroute.go
+ * - RequestBodyHandler     → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/requestbody/requestbody.go (RequestBody struct)
+ * - MapHandler             → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/map/map.go (Handler struct)
+ * - PushHandler            → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/push/handler.go (Handler struct)
+ * - InterceptHandler       → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/intercept/intercept.go (Intercept struct)
+ * - TracingHandler         → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/tracing/module.go (Tracing struct)
  */
 
 import type { HttpRoute } from "./http-app";
@@ -244,11 +259,13 @@ export interface ResponseMatcher {
 }
 
 // --- Tracing (OpenTelemetry) ---
+// Note: Caddy uses "span" (not "span_name") and "span_attributes" (not "custom_labels")
+// Ref: modules/caddyhttp/tracing/module.go
 
 export interface TracingHandler {
   handler: "tracing";
-  span_name?: string;
-  custom_labels?: Record<string, string>;
+  span?: string;
+  span_attributes?: Record<string, string>;
 }
 
 // --- Escape hatch for unknown/plugin handlers ---

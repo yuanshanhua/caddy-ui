@@ -61,10 +61,21 @@ function parseInitialValues(handler: RewriteHandler | undefined): RewriteFormVal
   return values;
 }
 
-function toHandler(values: RewriteFormValues): RewriteHandler {
-  const handler: RewriteHandler = { handler: "rewrite" };
+function toHandler(values: RewriteFormValues, original?: RewriteHandler): RewriteHandler {
+  const handler: RewriteHandler = { ...original, handler: "rewrite" };
 
-  if (values.method.trim()) handler.method = values.method.trim().toUpperCase();
+  // Only one rewrite mode is active at a time
+  delete handler.uri;
+  delete handler.strip_path_prefix;
+  delete handler.strip_path_suffix;
+  delete handler.uri_substring;
+  delete handler.path_regexp;
+
+  if (values.method.trim()) {
+    handler.method = values.method.trim().toUpperCase();
+  } else {
+    delete handler.method;
+  }
 
   switch (values.mode) {
     case "uri":
@@ -124,7 +135,7 @@ export function RewriteForm({ value, onChange }: RewriteFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values));
+    onChange(toHandler(values, value));
   }
 
   return (

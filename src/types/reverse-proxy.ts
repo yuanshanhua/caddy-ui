@@ -1,5 +1,15 @@
 /**
  * Reverse Proxy handler types — the most complex handler in Caddy.
+ *
+ * Source refs:
+ * - ReverseProxyHandler (Handler)   → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/reverseproxy/reverseproxy.go
+ * - Upstream                        → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/reverseproxy/hosts.go
+ * - LoadBalancing                   → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/reverseproxy/reverseproxy.go (LoadBalancing struct)
+ * - SelectionPolicy                 → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/reverseproxy/selectionpolicies.go
+ * - HealthChecks                    → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/reverseproxy/healthchecks.go
+ * - Transport (HTTPTransport)       → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/reverseproxy/httptransport.go
+ * - TransportTls (TLSConfig)        → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/reverseproxy/httptransport.go (TLSConfig struct)
+ * - HandleResponse                  → https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/caddyhttp.go (ResponseHandler struct)
  */
 
 export interface ReverseProxyHandler {
@@ -10,17 +20,17 @@ export interface ReverseProxyHandler {
   headers?: ProxyHeaderOps;
   transport?: Transport;
   flush_interval?: string;
-  buffer_requests?: boolean;
-  buffer_responses?: boolean;
+  request_buffers?: number;
+  response_buffers?: number;
   max_buffer_size?: number;
   trusted_proxies?: string[];
   handle_response?: HandleResponse[];
+  [key: string]: unknown;
 }
 
 export interface Upstream {
   dial?: string;
   max_requests?: number;
-  lookup_srv?: string;
 }
 
 export interface LoadBalancing {

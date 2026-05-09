@@ -3,6 +3,14 @@
  *
  * This represents the root JSON document that Caddy uses as its config.
  * Reference: https://caddyserver.com/docs/json/
+ *
+ * Source refs:
+ * - CaddyConfig     → https://github.com/caddyserver/caddy/blob/master/caddy.go  (Config struct)
+ * - LoggingConfig   → https://github.com/caddyserver/caddy/blob/master/logging.go (Logging struct)
+ * - LogConfig       → https://github.com/caddyserver/caddy/blob/master/logging.go (CustomLog struct)
+ * - StorageConfig   → https://github.com/caddyserver/caddy/blob/master/caddy.go   (StorageRaw field)
+ * - PkiApp          → https://github.com/caddyserver/caddy/blob/master/modules/caddypki/pki.go (PKI struct)
+ * - PkiCaConfig     → https://github.com/caddyserver/caddy/blob/master/modules/caddypki/ca.go  (CA struct)
  */
 
 import type { AdminConfig } from "./admin";

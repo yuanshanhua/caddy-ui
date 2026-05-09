@@ -23,6 +23,15 @@ const DEFAULT_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
 const DEFAULT_HEADERS = "Content-Type, Authorization";
 const DEFAULT_MAX_AGE = "86400";
 
+const CORS_HEADER_KEYS = new Set([
+  "Access-Control-Allow-Origin",
+  "Access-Control-Allow-Methods",
+  "Access-Control-Allow-Headers",
+  "Access-Control-Max-Age",
+  "Access-Control-Expose-Headers",
+  "Access-Control-Allow-Credentials",
+]);
+
 function parseCorsFromHeaders(handler: HeadersHandler | undefined): CorsFormValues {
   if (!handler?.response?.set) return corsFormDefaults;
 
@@ -37,28 +46,42 @@ function parseCorsFromHeaders(handler: HeadersHandler | undefined): CorsFormValu
   };
 }
 
-function toHandler(values: CorsFormValues): HeadersHandler {
-  const set: Record<string, string[]> = {
+function toHandler(values: CorsFormValues, original?: HeadersHandler): HeadersHandler {
+  const corsHeaders: Record<string, string[]> = {
     "Access-Control-Allow-Origin": [values.origins.trim() || "*"],
     "Access-Control-Allow-Methods": [values.methods.trim() || DEFAULT_METHODS],
     "Access-Control-Allow-Headers": [values.headers.trim() || DEFAULT_HEADERS],
   };
 
   if (values.maxAge.trim()) {
-    set["Access-Control-Max-Age"] = [values.maxAge.trim()];
+    corsHeaders["Access-Control-Max-Age"] = [values.maxAge.trim()];
   }
 
   if (values.exposeHeaders.trim()) {
-    set["Access-Control-Expose-Headers"] = [values.exposeHeaders.trim()];
+    corsHeaders["Access-Control-Expose-Headers"] = [values.exposeHeaders.trim()];
   }
 
   if (values.credentials) {
-    set["Access-Control-Allow-Credentials"] = ["true"];
+    corsHeaders["Access-Control-Allow-Credentials"] = ["true"];
+  }
+
+  const preservedSet: Record<string, string[]> = {};
+  if (original?.response?.set) {
+    for (const [key, val] of Object.entries(original.response.set)) {
+      if (!CORS_HEADER_KEYS.has(key)) {
+        preservedSet[key] = val;
+      }
+    }
   }
 
   return {
+    ...original,
     handler: "headers",
-    response: { set, deferred: true },
+    response: {
+      ...original?.response,
+      set: { ...preservedSet, ...corsHeaders },
+      deferred: true,
+    },
   };
 }
 
@@ -86,7 +109,7 @@ export function CorsForm({ value, onChange }: CorsFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values));
+    onChange(toHandler(values, value));
   }
 
   return (

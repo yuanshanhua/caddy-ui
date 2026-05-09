@@ -34,12 +34,22 @@ function parseInitialValues(handler: EncodeHandler | undefined): EncodeFormValue
   };
 }
 
-function toHandler(values: EncodeFormValues): EncodeHandler {
+function toHandler(values: EncodeFormValues, original?: EncodeHandler): EncodeHandler {
   const encodings: Record<string, Record<string, unknown>> = {};
-  if (values.gzipEnabled) encodings["gzip"] = {};
-  if (values.zstdEnabled) encodings["zstd"] = {};
+  if (values.gzipEnabled) encodings["gzip"] = original?.encodings?.["gzip"] ?? {};
+  if (values.zstdEnabled) encodings["zstd"] = original?.encodings?.["zstd"] ?? {};
+
+  // Preserve plugin encodings (e.g., brotli) that the form doesn't manage
+  if (original?.encodings) {
+    for (const [key, val] of Object.entries(original.encodings)) {
+      if (key !== "gzip" && key !== "zstd") {
+        encodings[key] = val;
+      }
+    }
+  }
 
   const handler: EncodeHandler = {
+    ...original,
     handler: "encode",
     encodings,
     prefer: values.prefer.filter(
@@ -50,6 +60,8 @@ function toHandler(values: EncodeFormValues): EncodeHandler {
   const minVal = Number.parseInt(values.minLength, 10);
   if (!Number.isNaN(minVal) && minVal > 0) {
     handler.minimum_length = minVal;
+  } else {
+    delete handler.minimum_length;
   }
 
   return handler;
@@ -80,7 +92,7 @@ export function EncodeForm({ value, onChange }: EncodeFormProps) {
   function emitChange() {
     isInternalChange.current = true;
     const values = form.getValues();
-    onChange(toHandler(values));
+    onChange(toHandler(values, value));
   }
 
   return (

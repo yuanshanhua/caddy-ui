@@ -51,7 +51,7 @@ function issuerToFormState(issuer: TlsIssuer): IssuerFormValues {
     email: issuer.email ?? "",
     ca: issuer.ca ?? "",
     httpChallengeDisabled: issuer.challenges?.http?.disabled ?? false,
-    tlsAlpnChallengeDisabled: issuer.challenges?.tls_alpn?.disabled ?? false,
+    tlsAlpnChallengeDisabled: issuer.challenges?.["tls-alpn"]?.disabled ?? false,
   };
 }
 
@@ -72,7 +72,7 @@ function formStateToIssuer(state: IssuerFormValues): TlsIssuer {
         issuer.challenges.http = { disabled: true };
       }
       if (state.tlsAlpnChallengeDisabled) {
-        issuer.challenges.tls_alpn = { disabled: true };
+        issuer.challenges["tls-alpn"] = { disabled: true };
       }
     }
   }
@@ -93,8 +93,8 @@ function parseInitialValues(policy: AutomationPolicy): TlsPolicyFormValues {
   };
 }
 
-function toPolicy(values: TlsPolicyFormValues): AutomationPolicy {
-  const policy: AutomationPolicy = {};
+function toPolicy(values: TlsPolicyFormValues, original?: AutomationPolicy): AutomationPolicy {
+  const policy: AutomationPolicy = { ...original };
 
   const subjectList = values.subjects
     .split(",")
@@ -102,22 +102,32 @@ function toPolicy(values: TlsPolicyFormValues): AutomationPolicy {
     .filter(Boolean);
   if (subjectList.length > 0) {
     policy.subjects = subjectList;
+  } else {
+    delete policy.subjects;
   }
 
   const issuerObjects = values.issuers.map(formStateToIssuer);
   if (issuerObjects.length > 0) {
     policy.issuers = issuerObjects;
+  } else {
+    delete policy.issuers;
   }
 
   if (values.keyType) {
     policy.key_type = values.keyType;
+  } else {
+    delete policy.key_type;
   }
 
   if (values.onDemand) {
     policy.on_demand = true;
+  } else {
+    delete policy.on_demand;
   }
   if (values.mustStaple) {
     policy.must_staple = true;
+  } else {
+    delete policy.must_staple;
   }
 
   return policy;
@@ -148,7 +158,7 @@ export function PolicyFormDialog({
   });
 
   function handleFormSubmit(values: TlsPolicyFormValues) {
-    onSubmit(toPolicy(values));
+    onSubmit(toPolicy(values, initialPolicy));
   }
 
   return (
