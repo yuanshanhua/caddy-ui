@@ -259,7 +259,11 @@ export function RouteFormDialog({
       }
     }
 
-    return hasMatcher ? [matcher] : undefined;
+    if (!hasMatcher) return undefined;
+
+    // Preserve extra matcher sets (OR'd) from the original route that the form doesn't edit
+    const extraMatcherSets = initialRoute?.match?.slice(1) ?? [];
+    return [matcher, ...extraMatcherSets];
   }
 
   function buildHandlers(values: RouteFormValues): HttpHandler[] {
@@ -273,6 +277,15 @@ export function RouteFormDialog({
     if (enabledMiddleware.has("cors") && corsHandler) handlers.push(corsHandler);
     if (enabledMiddleware.has("encode") && encodeHandler) handlers.push(encodeHandler);
 
+    // Find original primary handler to preserve unmanaged fields
+    const originalPrimary = initialRoute?.handle?.find(
+      (h) =>
+        h.handler === "reverse_proxy" ||
+        h.handler === "file_server" ||
+        h.handler === "static_response" ||
+        h.handler === "subroute",
+    );
+
     switch (values.handlerType) {
       case "reverse_proxy": {
         if (reverseProxyHandler) {
@@ -285,29 +298,44 @@ export function RouteFormDialog({
         }
         break;
       }
-      case "file_server":
-        handlers.push({ handler: "file_server" as const, root: values.fileRoot || undefined });
-        break;
-      case "static_response":
+      case "file_server": {
+        const orig = originalPrimary?.handler === "file_server" ? originalPrimary : undefined;
         handlers.push({
+          ...orig,
+          handler: "file_server" as const,
+          root: values.fileRoot || undefined,
+        });
+        break;
+      }
+      case "static_response": {
+        const orig = originalPrimary?.handler === "static_response" ? originalPrimary : undefined;
+        handlers.push({
+          ...orig,
           handler: "static_response" as const,
           status_code: values.staticStatus,
           body: values.staticBody || undefined,
         });
         break;
-      case "redir":
+      }
+      case "redir": {
+        const orig = originalPrimary?.handler === "static_response" ? originalPrimary : undefined;
         handlers.push({
+          ...orig,
           handler: "static_response" as const,
           status_code: values.redirStatus,
           headers: { Location: [values.redirUrl] },
         });
         break;
-      case "subroute":
+      }
+      case "subroute": {
+        const orig = originalPrimary?.handler === "subroute" ? originalPrimary : undefined;
         handlers.push({
+          ...orig,
           handler: "subroute" as const,
           routes: subrouteRoutes,
         });
         break;
+      }
     }
 
     return handlers;
@@ -315,6 +343,7 @@ export function RouteFormDialog({
 
   function handleFormSubmit(values: RouteFormValues) {
     const route: HttpRoute = {
+      ...initialRoute,
       match: buildMatcher(values),
       handle: buildHandlers(values),
       terminal: values.terminal,
