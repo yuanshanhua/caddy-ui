@@ -254,6 +254,134 @@ describe("converters/headers", () => {
 
     expect(result.response?.require).toEqual({ status_code: [200, 201] });
   });
+
+  it("does not leak old operations when an entry is removed", () => {
+    const original: HeadersHandler = {
+      handler: "headers",
+      request: {
+        set: { "X-Custom": ["value"] },
+      },
+    };
+    const formValues = parseHeaders(original);
+    // Simulate removing the only entry
+    formValues.requestHeaders = [];
+    const result = toHeaders(formValues, original);
+
+    expect(result.request).toBeUndefined();
+  });
+
+  it("does not leak old set operation when changed to delete", () => {
+    const original: HeadersHandler = {
+      handler: "headers",
+      request: {
+        set: { "X-Custom": ["value"] },
+      },
+    };
+    const formValues = parseHeaders(original);
+    // Simulate changing the operation from "set" to "delete"
+    const entry = formValues.requestHeaders[0];
+    if (!entry) throw new Error("Expected request header entry");
+    entry.operation = "delete";
+    entry.value = "";
+    const result = toHeaders(formValues, original);
+
+    expect(result.request?.set).toBeUndefined();
+    expect(result.request?.delete).toEqual(["X-Custom"]);
+  });
+
+  it("does not leak old set operation when changed to add", () => {
+    const original: HeadersHandler = {
+      handler: "headers",
+      request: {
+        set: { "X-Custom": ["value"] },
+      },
+    };
+    const formValues = parseHeaders(original);
+    // Simulate changing the operation from "set" to "add"
+    const entry = formValues.requestHeaders[0];
+    if (!entry) throw new Error("Expected request header entry");
+    entry.operation = "add";
+    const result = toHeaders(formValues, original);
+
+    expect(result.request?.set).toBeUndefined();
+    expect(result.request?.add).toEqual({ "X-Custom": ["value"] });
+  });
+
+  it("does not leak old add operation when changed to set", () => {
+    const original: HeadersHandler = {
+      handler: "headers",
+      request: {
+        add: { "X-Forwarded-For": ["client-ip"] },
+      },
+    };
+    const formValues = parseHeaders(original);
+    // Simulate changing the operation from "add" to "set"
+    const entry = formValues.requestHeaders[0];
+    if (!entry) throw new Error("Expected request header entry");
+    entry.operation = "set";
+    const result = toHeaders(formValues, original);
+
+    expect(result.request?.add).toBeUndefined();
+    expect(result.request?.set).toEqual({ "X-Forwarded-For": ["client-ip"] });
+  });
+
+  it("does not leak old delete operation when changed to set", () => {
+    const original: HeadersHandler = {
+      handler: "headers",
+      request: {
+        delete: ["X-Unwanted"],
+      },
+    };
+    const formValues = parseHeaders(original);
+    // Simulate changing the operation from "delete" to "set" (user mistook)
+    const entry = formValues.requestHeaders[0];
+    if (!entry) throw new Error("Expected request header entry");
+    entry.operation = "set";
+    entry.value = "new-value";
+    const result = toHeaders(formValues, original);
+
+    expect(result.request?.delete).toBeUndefined();
+    expect(result.request?.set).toEqual({ "X-Unwanted": ["new-value"] });
+  });
+
+  it("preserves unmanaged fields while replacing managed ones", () => {
+    const original: HeadersHandler = {
+      handler: "headers",
+      request: {
+        set: { "X-Old": ["old-val"] },
+        replace: { Cookie: [{ search: "session=", replace: "" }] },
+      },
+      response: {
+        set: { "X-Old-Resp": ["old"] },
+        require: { status_code: [200] },
+        replace: { "Set-Cookie": [{ search: "Domain=old", replace: "Domain=new" }] },
+      },
+    };
+    const formValues = parseHeaders(original);
+    // Change request: "X-Old" set → delete; response: "X-Old-Resp" set → add
+    const reqEntry = formValues.requestHeaders[0];
+    if (!reqEntry) throw new Error("Expected request header entry");
+    reqEntry.operation = "delete";
+    reqEntry.value = "";
+    const respEntry = formValues.responseHeaders[0];
+    if (!respEntry) throw new Error("Expected response header entry");
+    respEntry.operation = "add";
+    const result = toHeaders(formValues, original);
+
+    // Managed fields should be fully replaced (no old set leaked)
+    expect(result.request?.set).toBeUndefined();
+    expect(result.request?.delete).toEqual(["X-Old"]);
+    expect(result.response?.set).toBeUndefined();
+    expect(result.response?.add).toEqual({ "X-Old-Resp": ["old"] });
+    // Unmanaged fields should be preserved
+    expect(result.request?.replace).toEqual({
+      Cookie: [{ search: "session=", replace: "" }],
+    });
+    expect(result.response?.replace).toEqual({
+      "Set-Cookie": [{ search: "Domain=old", replace: "Domain=new" }],
+    });
+    expect(result.response?.require).toEqual({ status_code: [200] });
+  });
 });
 
 describe("converters/basic-auth", () => {

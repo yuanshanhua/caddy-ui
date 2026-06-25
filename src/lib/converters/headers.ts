@@ -81,7 +81,12 @@ export function toHeaders(values: HeadersFormValues, original?: HeadersHandler):
 
   const requestOps = buildHeaderOps(values.requestHeaders);
   if (requestOps) {
-    handler.request = { ...original?.request, ...requestOps };
+    // Only preserve unmanaged fields (replace) from the original, not add/set/delete
+    // which are fully managed by the form and would otherwise leak stale operations.
+    handler.request = {
+      ...(original?.request?.replace ? { replace: original.request.replace } : {}),
+      ...requestOps,
+    };
   } else if (original?.request?.replace) {
     handler.request = { replace: original.request.replace };
   } else {
@@ -90,7 +95,12 @@ export function toHeaders(values: HeadersFormValues, original?: HeadersHandler):
 
   const responseOps = buildHeaderOps(values.responseHeaders);
   if (responseOps) {
-    const respOps: RespHeaderOps = { ...original?.response, ...responseOps };
+    // Only preserve unmanaged response fields (replace, require) from the original.
+    const respOps: RespHeaderOps = {
+      ...(original?.response?.replace ? { replace: original.response.replace } : {}),
+      ...(original?.response?.require ? { require: original.response.require } : {}),
+      ...responseOps,
+    };
     if (values.responseDeferred) {
       respOps.deferred = true;
     } else {
